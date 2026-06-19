@@ -110,13 +110,9 @@ class GameEngine {
     if (!p) return;
     const r = this.playerRadius(p);
     const c = this.getPlayerCanvas(socketId);
-    // giới hạn canvas theo viewport của người chơi
-    let nx = Math.max(r, Math.min(c.w - r, x));
-    let ny = Math.max(r, Math.min(c.h - r, y));
-    if (this.players.size <= 1) { p.x = nx; p.y = ny; return; }
-    if (this._canStand(p, nx, ny)) { p.x = nx; p.y = ny; return; }
-    if (this._canStand(p, nx, p.y)) { p.x = nx; return; }
-    if (this._canStand(p, p.x, ny)) { p.y = ny; return; }
+    // giới hạn canvas theo viewport của người chơi (không có va chạm)
+    p.x = Math.max(r, Math.min(c.w - r, x));
+    p.y = Math.max(r, Math.min(c.h - r, y));
   }
 
   _canStand(self, x, y) {

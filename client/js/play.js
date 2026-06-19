@@ -355,10 +355,7 @@ function loop(ts) {
     const r = charRadius(me);
     let nx = Math.max(r, Math.min(canvas.width - r, me.x + dx * speed));
     let ny = Math.max(r, Math.min(canvas.height - r, me.y + dy * speed));
-    // thử trọn -> x only -> y only (trượt theo 1 trục nếu bị chặn)
-    if (canStand(me, nx, ny)) { me.x = nx; me.y = ny; }
-    else if (canStand(me, nx, me.y)) { me.x = nx; }
-    else if (canStand(me, me.x, ny)) { me.y = ny; }
+    me.x = nx; me.y = ny;   // không va chạm, đi qua nhau được
 
     me.lastMoveTime = Date.now();
     if (dx > 0) me.facing = 1;
