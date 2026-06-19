@@ -63,6 +63,16 @@
   <!-- Joystick cảm ứng -->
   <div id="joystick" class="hidden"><div class="stick"></div></div>
 
+  <!-- Reaction bar: tim / cuoi / like -->
+  <div id="reaction-bar" class="reaction-bar hidden">
+    <button class="reaction-btn" data-react="heart">❤️</button>
+    <button class="reaction-btn" data-react="smile">😊</button>
+    <button class="reaction-btn" data-react="like">👍</button>
+  </div>
+
+  <!-- Layer chứa emoji bay lên khi người khác reaction -->
+  <div id="fx-layer" class="fx-layer"></div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/play.js"></script>
 </body>

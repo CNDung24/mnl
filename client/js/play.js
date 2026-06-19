@@ -186,9 +186,49 @@ document.getElementById('join-btn').onclick = () => {
     document.getElementById('me-info').innerHTML =
       `${charMap[me.characterId].emoji} ${me.name} <span class="team-${me.teamId}">[${t.name}]</span>`;
     applyTaken(state && state.takenCharacters ? state.takenCharacters : []);
+    document.getElementById('reaction-bar').classList.remove('hidden');
     startLobby();
   });
 };
+
+// ---------- Reactions ----------
+const REACT_EMOJI = { heart: '❤️', smile: '😊', like: '👍' };
+document.querySelectorAll('.reaction-btn').forEach(btn => {
+  btn.onclick = () => {
+    if (!me) return;
+    const type = btn.dataset.react;
+    socket.emit('reaction', { type });
+    // hiện ngay trên nhân vật mình (đỡ chờ server)
+    spawnReaction(socket.id, type);
+  };
+});
+
+socket.on('reaction', (data) => {
+  if (!data || !data.id || !data.type) return;
+  spawnReaction(data.id, data.type);
+});
+
+function spawnReaction(playerId, type) {
+  const emoji = REACT_EMOJI[type] || '✨';
+  if (!state) return;
+  const p = state.players.find(x => x.id === playerId);
+  if (!p) return;
+
+  // Tính tọa độ trên màn hình từ tọa độ trong canvas
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = rect.width / canvas.width;
+  const scaleY = rect.height / canvas.height;
+  const sx = rect.left + p.x * scaleX;
+  const sy = rect.top + (p.y - 50) * scaleY;  // bay lên trên đầu nhân vật
+
+  const el = document.createElement('div');
+  el.className = 'fx-emoji';
+  el.textContent = emoji;
+  el.style.left = sx + 'px';
+  el.style.top  = sy + 'px';
+  document.getElementById('fx-layer').appendChild(el);
+  setTimeout(() => el.remove(), 1700);
+}
 
 // ---------- State updates ----------
 socket.on('state', (s) => {

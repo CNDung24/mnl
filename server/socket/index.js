@@ -128,6 +128,12 @@ function registerSockets(io, engine) {
       socket.broadcast.emit('player-move', { id: socket.id, x: pos.x, y: pos.y });
     });
 
+    // Reaction (emoji bay lên trên nhân vật)
+    socket.on('reaction', (data) => {
+      if (!data || !['heart', 'smile', 'like'].includes(data.type)) return;
+      io.emit('reaction', { id: socket.id, type: data.type });
+    });
+
     socket.on('answer', (data, cb) => {
       const r = engine.submitAnswer(socket.id, data.choice);
       cb && cb(r);
