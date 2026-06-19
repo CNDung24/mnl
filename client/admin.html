@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Triết Học Arena</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Đăng nhập -->
+  <div id="login" class="container">
+    <h1 class="center">🛠️ ADMIN</h1>
+    <div class="panel">
+      <label>Mật khẩu</label>
+      <input id="pw" type="password" placeholder="...">
+      <button id="login-btn" class="gold" style="width:100%">ĐĂNG NHẬP</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dash" class="container hidden">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h1 style="margin:0">🛠️ Bảng điều khiển</h1>
+      <a href="/projector" target="_blank" class="btn-link" style="font-size:10px;padding:8px 14px;background:var(--accent);color:#000;border:2px solid #fff;text-decoration:none;font-family:'Press Start 2P',monospace">📺 MÁY CHIẾU</a>
+    </div>
+
+    <div class="panel">
+      <h2>Điều khiển trận</h2>
+      <div class="row">
+        <button id="btn-start" class="gold">▶️ Bắt đầu trận</button>
+        <button id="btn-next">⏭️ Vòng tiếp theo</button>
+        <button id="btn-reset" class="danger">🔄 Reset</button>
+      </div>
+      <p style="margin-top:10px;font-size:9px" id="phase-info">Pha: ---</p>
+    </div>
+
+    <!-- Câu hỏi hiện tại + chọn đáp án đúng -->
+    <div id="current-q" class="panel hidden">
+      <h2>Câu hỏi hiện tại (Vòng <span id="cur-round"></span>)</h2>
+      <p id="cur-q-text" style="margin-bottom:10px"></p>
+      <p style="font-size:9px;color:var(--accent2)">Chọn đáp án ĐÚNG rồi bấm Chốt:</p>
+      <div class="row" id="cur-options"></div>
+      <button id="btn-reveal" class="gold" style="margin-top:12px">✅ CHỐT ĐÁP ÁN</button>
+      <p style="margin-top:10px;font-size:9px" id="answer-status"></p>
+    </div>
+
+    <!-- HP các đội -->
+    <div class="panel">
+      <h2>Máu các đội</h2>
+      <div id="hp-list"></div>
+    </div>
+
+    <!-- Quản lý câu hỏi -->
+    <div class="panel">
+      <h2>Danh sách câu hỏi</h2>
+      <div id="q-editor"></div>
+      <button id="btn-add-q">➕ Thêm câu hỏi</button>
+      <button id="btn-save-q" class="gold">💾 Lưu danh sách</button>
+    </div>
+
+    <!-- Import / Export JSON -->
+    <div class="panel">
+      <h2>📥 Import / Xuất JSON</h2>
+      <p style="font-size:9px;color:var(--accent2)">
+        Dán mảng JSON: <code>[{"text":"...","options":["A","B","C","D"],"correct":0}, ...]</code><br>
+        <code>correct</code> là index đáp án đúng (0-3). Có thể bỏ qua nếu muốn dùng UI chỉnh sau.
+      </p>
+      <textarea id="json-area" rows="6" style="width:100%;font-family:monospace;font-size:11px;padding:8px;background:#0a0820;color:#fff;border:2px solid var(--border);box-sizing:border-box" placeholder='[{"text":"Câu hỏi?","options":["A","B","C","D"],"correct":0}]'></textarea>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+        <button id="btn-import-replace" class="gold">📥 Import (thay thế)</button>
+        <button id="btn-import-merge">➕ Gộp thêm</button>
+        <button id="btn-export-json">📋 Xuất JSON</button>
+        <button id="btn-load-file">📂 Mở file .json</button>
+        <input type="file" id="file-input" accept=".json,application/json" style="display:none">
+      </div>
+      <p style="margin-top:8px;font-size:9px" id="import-status"></p>
+    </div>
+
+    <!-- Lịch sử -->
+    <div class="panel">
+      <h2>Lịch sử trả lời</h2>
+      <div id="history"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

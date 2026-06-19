@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Chơi - Triết Học Arena</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- B1: Form tham gia -->
+  <div id="join-screen" class="container">
+    <h1 class="center">⚔️ THAM GIA ⚔️</h1>
+    <div class="panel">
+      <label>Tên của bạn</label>
+      <input id="name" maxlength="16" placeholder="Nhập tên...">
+
+      <label>Chọn đội</label>
+      <div id="team-pick" class="team-pick"></div>
+
+      <label>Chọn nhân vật (~50)</label>
+      <div id="char-grid" class="char-grid"></div>
+
+      <button id="join-btn" class="gold" style="width:100%;margin-top:18px">VÀO SẢNH CHỜ 🚪</button>
+    </div>
+  </div>
+
+  <!-- B2: Sảnh chờ + game -->
+  <div id="game-screen" class="container hidden">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 id="status-label">SẢNH CHỜ</h2>
+      <div id="me-info" style="font-size:9px"></div>
+    </div>
+    <canvas id="lobby-canvas" width="900" height="500"></canvas>
+
+    <!-- Khu vực trả lời câu hỏi -->
+    <div id="question-box" class="panel hidden" style="margin-top:16px">
+      <div class="row" style="justify-content:space-between">
+        <h3 id="q-round"></h3>
+        <span class="timer" id="q-timer">--</span>
+      </div>
+      <div class="timer-bar"><div class="timer-fill" id="q-timer-fill" style="width:100%"></div></div>
+      <p id="q-text" style="margin:14px 0"></p>
+      <div class="answers" id="q-answers"></div>
+      <p id="q-wait" class="center hidden" style="margin-top:14px;color:var(--accent2)">Đã ghi nhận! Chờ kết quả...</p>
+    </div>
+
+    <!-- Khu vực tấn công -->
+    <div id="attack-box" class="panel hidden" style="margin-top:16px">
+      <h3>🔥 Đội bạn THẮNG lượt! Chọn đội để tấn công:</h3>
+      <div class="row" id="attack-targets"></div>
+    </div>
+
+    <!-- Thông báo xem -->
+    <div id="spectate-box" class="panel hidden center" style="margin-top:16px">
+      <p id="spectate-msg">Bạn đang xem vòng này. Cố lên! 👀</p>
+    </div>
+  </div>
+
+  <!-- Joystick cảm ứng -->
+  <div id="joystick" class="hidden"><div class="stick"></div></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/play.js"></script>
+</body>
+</html>

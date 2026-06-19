@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Máy chiếu - Triết Học Arena</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { font-size: 14px; }
+    .proj-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+    .teams-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 20px; }
+    .big-q { font-size: 20px; min-height: 80px; }
+    .proj-timer { font-size: 60px; }
+    .vs-chosen { display:grid; grid-template-columns: repeat(5,1fr); gap:10px; text-align:center; }
+    .chosen-card { padding:12px; border:2px solid var(--border); background:#1a1640; }
+    .lb-row { display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid var(--border); }
+    @media (max-width:900px){ .proj-grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width:1400px">
+    <h1 class="center">⚔️ TRIẾT HỌC ARENA ⚔️</h1>
+
+    <!-- Thanh HP 5 đội -->
+    <div class="teams-row" id="teams-row"></div>
+
+    <div class="proj-grid">
+      <div>
+        <!-- Người đang thi đấu -->
+        <div class="panel">
+          <h2 id="round-title">Chờ bắt đầu...</h2>
+          <div class="vs-chosen" id="chosen"></div>
+        </div>
+
+        <!-- Câu hỏi -->
+        <div class="panel" id="q-panel">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <h2>Câu hỏi</h2>
+            <div class="proj-timer" id="timer">--</div>
+          </div>
+          <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+          <p class="big-q" id="q-text" style="margin-top:16px">---</p>
+          <div class="answers" id="q-options"></div>
+        </div>
+
+        <!-- Thông báo tấn công -->
+        <div class="panel hidden center" id="attack-panel">
+          <h2 id="attack-text"></h2>
+        </div>
+      </div>
+
+      <!-- Bảng xếp hạng cá nhân -->
+      <div>
+        <div class="panel">
+          <h2>🏆 BXH cá nhân</h2>
+          <div id="leaderboard"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/projector.js"></script>
+</body>
+</html>

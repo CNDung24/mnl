@@ -1,0 +1,216 @@
+/* ===== Pixel-art arena theme ===== */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0c29;
+  --bg2: #1a1740;
+  --panel: #241f4d;
+  --accent: #ffe66d;
+  --accent2: #4ecdc4;
+  --danger: #ff6b6b;
+  --text: #f3f0ff;
+  --border: #4a3f8c;
+}
+
+body {
+  font-family: 'Press Start 2P', monospace;
+  background: linear-gradient(160deg, var(--bg), var(--bg2));
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 12px;
+  line-height: 1.8;
+  image-rendering: pixelated;
+}
+
+.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+h1, h2, h3 { color: var(--accent); text-shadow: 2px 2px 0 #000; margin-bottom: 16px; }
+h1 { font-size: 20px; }
+h2 { font-size: 15px; }
+
+.panel {
+  background: var(--panel);
+  border: 3px solid var(--border);
+  box-shadow: 0 0 0 3px #000, 6px 6px 0 rgba(0,0,0,.4);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+label { display: block; margin: 14px 0 6px; color: var(--accent2); }
+
+input, select, textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 12px;
+  background: #14102e;
+  color: var(--text);
+  border: 2px solid var(--border);
+  outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+button, .btn {
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 14px 18px;
+  background: var(--accent2);
+  color: #062b28;
+  border: none;
+  box-shadow: 0 4px 0 #1c7a72, 0 0 0 3px #000;
+  transition: transform .05s;
+  margin-top: 8px;
+}
+button:hover, .btn:hover { filter: brightness(1.1); }
+button:active, .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #1c7a72, 0 0 0 3px #000; }
+button.danger { background: var(--danger); color: #2b0606; box-shadow: 0 4px 0 #a83232, 0 0 0 3px #000; }
+button.gold { background: var(--accent); color: #2b2406; box-shadow: 0 4px 0 #b09b2e, 0 0 0 3px #000; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+.row { display: flex; gap: 12px; flex-wrap: wrap; }
+.center { text-align: center; }
+.hidden { display: none !important; }
+
+/* ===== Team colors ===== */
+.team-1 { color: #e74c3c; } .team-2 { color: #3498db; }
+.team-3 { color: #2ecc71; } .team-4 { color: #f1c40f; } .team-5 { color: #9b59b6; }
+
+/* ===== Character grid ===== */
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 2px solid var(--border);
+  background: #14102e;
+}
+.char-cell {
+  aspect-ratio: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 26px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  background: #1e1947;
+}
+.char-cell:hover { border-color: var(--accent2); }
+.char-cell.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+.char-cell.taken {
+  opacity: 0.35;
+  filter: grayscale(1);
+  cursor: not-allowed;
+  pointer-events: none;
+  position: relative;
+}
+.char-cell.taken::after {
+  content: 'Đã chọn';
+  position: absolute;
+  top: 2px; right: 4px;
+  font-size: 5px;
+  color: #fff;
+  background: rgba(0,0,0,0.6);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+.char-cell .nm { font-size: 6px; margin-top: 4px; color: #bbb; text-align: center; }
+
+/* Sprite animation: dùng CSS steps() cuộn ngang sprite sheet */
+.char-sprite {
+  display: block;
+  background-repeat: no-repeat;
+  background-size: calc(var(--fw) * var(--frames)) 100%;
+  image-rendering: pixelated;
+  animation: char-play 0.8s steps(var(--frames)) infinite;
+  margin: 0 auto;
+}
+@keyframes char-play {
+  from { background-position: 0 0; }
+  to   { background-position: calc(var(--fw) * var(--frames) * -1) 0; }
+}
+.char-sprite.idle, .big-sprite.idle {
+  animation-play-state: paused;
+  background-position: 0 0;   /* đứng ở frame đầu */
+}
+.char-emoji { font-size: 26px; line-height: 1; }
+
+/* Sprite lớn cho máy chiếu */
+.big-sprite {
+  display: block;
+  background-repeat: no-repeat;
+  background-size: calc(var(--fw) * var(--frames)) 100%;
+  image-rendering: pixelated;
+  animation: char-play 0.8s steps(var(--frames)) infinite;
+  margin: 0 auto 8px;
+}
+
+.team-pick { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; }
+.team-pick .tp {
+  padding: 12px 4px; text-align: center; cursor: pointer;
+  border: 2px solid var(--border); background: #1e1947; font-size: 9px;
+}
+.team-pick .tp.sel { border-color: #fff; background: var(--accent); box-shadow: 0 0 0 3px #fff inset, 0 0 12px var(--accent); color: #fff; transform: scale(1.05); }
+
+/* ===== Lobby canvas (full màn hình) ===== */
+/* Phá vỡ giới hạn .container (max-width 1000px) cho sảnh chờ */
+#game-screen.container {
+  max-width: none;
+  margin: 0;
+  padding: 8px 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+#lobby-canvas {
+  display: block; width: 100%; height: calc(100vh - 70px);
+  background: #0a0820;
+  border: 3px solid var(--border); box-shadow: 0 0 0 3px #000; touch-action: none;
+  margin-top: 8px;
+}
+
+/* Joystick */
+#joystick {
+  position: fixed; bottom: 30px; left: 30px; width: 120px; height: 120px;
+  border-radius: 50%; background: rgba(255,255,255,.08);
+  border: 3px solid var(--border); touch-action: none; z-index: 50;
+}
+#joystick .stick {
+  position: absolute; width: 50px; height: 50px; border-radius: 50%;
+  background: var(--accent2); left: 35px; top: 35px; box-shadow: 0 0 0 3px #000;
+}
+
+/* ===== Answer buttons ===== */
+.answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.ans-btn { padding: 22px 12px; font-size: 12px; text-align: left; }
+.ans-A { background: #ff6b6b; box-shadow: 0 4px 0 #b33; color:#fff; }
+.ans-B { background: #4ecdc4; box-shadow: 0 4px 0 #277; color:#042; }
+.ans-C { background: #ffe66d; box-shadow: 0 4px 0 #aa3; color:#420; }
+.ans-D { background: #a78bfa; box-shadow: 0 4px 0 #639; color:#fff; }
+.ans-btn.picked { outline: 4px solid #fff; }
+
+/* ===== HP bars ===== */
+.team-card { margin-bottom: 14px; }
+.hp-bar { height: 22px; background: #14102e; border: 2px solid var(--border); position: relative; }
+.hp-fill { height: 100%; transition: width .4s; }
+.hp-text { position: absolute; right: 6px; top: 2px; font-size: 9px; }
+.dead { opacity: .35; filter: grayscale(1); }
+
+/* timer */
+.timer { font-size: 28px; color: var(--danger); text-shadow: 2px 2px 0 #000; }
+.timer-bar { height: 12px; background:#14102e; border:2px solid var(--border); margin-top:8px; }
+.timer-fill { height:100%; background: var(--danger); transition: width .25s linear; }
+
+/* shake effect */
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+.shake { animation: shake .4s; }
+
+.big-emoji { font-size: 48px; }
+table { width: 100%; border-collapse: collapse; font-size: 9px; }
+th, td { border: 1px solid var(--border); padding: 6px; text-align: left; }
+th { background: #1e1947; color: var(--accent); }
+.menu-links a { display:inline-block; margin: 8px; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--danger); color:#fff; padding: 12px 20px; border: 2px solid #000; z-index: 100; }
