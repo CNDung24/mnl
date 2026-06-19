@@ -1,3 +1,5 @@
+opencode -s ses_1225cd696ffeD43fJMSRKi6O30
+
 # ⚔️ Triết Học Arena
 
 Game web multiplayer thời gian thực cho môn Triết học — đấu trường 5 đội, phong cách pixel-art.

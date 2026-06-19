@@ -87,6 +87,41 @@ function applyTaken(takenIds) {
   if (selectedChar && takenSet.has(selectedChar)) selectedChar = null;
 }
 
+// Render thanh HP 5 đội (hiển thị cả khi đang chờ và khi đang chơi)
+function renderTeamHP() {
+  if (!state) return;
+  const el = document.getElementById('team-hp');
+  if (!el) return;
+  // render nếu DOM chưa có hoặc số team thay đổi
+  if (el.children.length !== state.teams.length) {
+    el.innerHTML = '';
+    state.teams.forEach(t => {
+      const d = document.createElement('div');
+      d.id = 'lobby-team-card-' + t.id;
+      d.className = 'team-card';
+      d.style.borderColor = t.color;
+      d.style.margin = '0';
+      d.innerHTML = `
+        <div class="center" style="color:${t.color};font-size:11px">${t.name}</div>
+        <div class="hp-bar" style="margin-top:4px">
+          <div class="hp-fill" style="width:100%;background:${t.color}"></div>
+          <span class="hp-text">10/10</span>
+        </div>`;
+      el.appendChild(d);
+    });
+  }
+  state.teams.forEach(t => {
+    const card = document.getElementById('lobby-team-card-' + t.id);
+    if (!card) return;
+    card.classList.toggle('dead', !t.alive);
+    const pct = (t.hp / 10) * 100;
+    const fill = card.querySelector('.hp-fill');
+    const txt = card.querySelector('.hp-text');
+    if (fill) fill.style.width = pct + '%';
+    if (txt) txt.textContent = (t.alive ? t.hp : '💀') + '/10';
+  });
+}
+
 function renderTeamPick() {
   const el = document.getElementById('team-pick');
   el.innerHTML = '';
@@ -161,6 +196,7 @@ socket.on('state', (s) => {
   // đảm bảo mỗi player có facing (1=phải, -1=trái)
   state.players.forEach(p => { if (typeof p.facing !== 'number') p.facing = 1; });
   applyTaken(s.takenCharacters || []);
+  renderTeamHP();
   updatePhaseUI();
 });
 

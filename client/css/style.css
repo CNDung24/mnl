@@ -164,6 +164,22 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   width: 100%;
   box-sizing: border-box;
 }
+
+/* Thanh máu 5 đội (lobby + game) */
+.team-hp-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+.team-hp-row .team-card {
+  background: #1a1640;
+  border: 2px solid var(--border);
+  padding: 8px 10px;
+  margin: 0;
+}
+.team-hp-row .team-card.dead { opacity: .35; filter: grayscale(1); }
+.team-hp-row .hp-bar { height: 14px; }
 #lobby-canvas {
   display: block; width: 100%; height: calc(100vh - 70px);
   background: #0a0820;
