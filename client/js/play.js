@@ -280,6 +280,7 @@ function updatePhaseUI() {
   const label = document.getElementById('status-label');
   const canvas = document.getElementById('lobby-canvas');
   const banner = document.getElementById('next-round-banner');
+  const joystick = document.getElementById('joystick');
 
   if (state.phase === 'lobby') {
     label.textContent = '🏛️ SẢNH CHỜ - chờ admin bắt đầu';
@@ -289,14 +290,17 @@ function updatePhaseUI() {
       canvas.classList.remove('hidden');
       fitCanvas();
     }
+    // Ở sảnh chờ → hiện joystick để di chuyển (chỉ thiết bị cảm ứng)
+    if (joystick) joystick.classList.remove('hidden');
   } else if (state.phase === 'question') {
     label.textContent = '⚔ VÒNG ' + state.round + ' — TRẢ LỜI CÂU HỎI';
     if (canvas) canvas.classList.add('hidden');
     if (banner) banner.classList.add('hidden');
+    // Đã vào trận → ẩN joystick (di chuyển bị khóa)
+    if (joystick) joystick.classList.add('hidden');
     // Hiện câu hỏi cho tất cả người chơi thuộc đội còn sống
     const myTeam = state.teams.find(t => t.id === me.teamId);
     if (myTeam && myTeam.alive && state.question) {
-      // Hiện lại câu hỏi nếu round đổi (vd: reload, hoặc vừa chuyển vòng)
       if (state.round !== lastShownRound) showQuestion(state.question);
     } else {
       hideAll();
@@ -308,15 +312,18 @@ function updatePhaseUI() {
   } else if (state.phase === 'attack') {
     label.textContent = '⚔ VÒNG ' + state.round + ' — TẤN CÔNG';
     if (canvas) canvas.classList.add('hidden');
+    if (joystick) joystick.classList.add('hidden');
     document.getElementById('question-box').classList.add('hidden');
   } else if (state.phase === 'reveal') {
     label.textContent = '⚔ VÒNG ' + state.round + ' — Kết quả';
     if (canvas) canvas.classList.add('hidden');
+    if (joystick) joystick.classList.add('hidden');
   } else if (state.phase === 'finished') {
     label.textContent = '🏆 TRẬN ĐẤU KẾT THÚC';
     hideAll();
     if (banner) banner.classList.add('hidden');
     if (canvas) canvas.classList.add('hidden');
+    if (joystick) joystick.classList.add('hidden');
   }
 }
 
