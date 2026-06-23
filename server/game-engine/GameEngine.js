@@ -163,7 +163,7 @@ class GameEngine {
     return this.nextRound();
   }
 
-  // Bắt đầu một vòng mới: chọn ngẫu nhiên 1 người/đội (chưa từng được chọn)
+  // Bắt đầu một vòng mới: tất cả người chơi đang online đều được mời trả lời
   nextRound() {
     // kiểm tra kết thúc
     const alive = this.aliveTeams();
@@ -180,18 +180,13 @@ class GameEngine {
     this.winnerTeamId = null;
     this.pendingAttackerTeam = null;
 
-    // chọn người chơi mỗi đội còn sống
+    // Tất cả người chơi thuộc đội còn sống đều có thể trả lời
     this.currentChosen = [];
     for (const t of alive) {
-      let pool = this.getPlayersByTeam(t.id).filter(p => !this.usedPlayerIds.has(p.id));
-      if (pool.length === 0) {
-        // hết lượt -> cho phép chọn lại từ đầu (reset riêng đội này)
-        pool = this.getPlayersByTeam(t.id);
-      }
-      if (pool.length === 0) continue; // đội không có thành viên online
-      const chosen = pool[Math.floor(Math.random() * pool.length)];
-      this.usedPlayerIds.add(chosen.id);
-      this.currentChosen.push({ teamId: t.id, socketId: chosen.id, name: chosen.name });
+      const teamPlayers = this.getPlayersByTeam(t.id);
+      teamPlayers.forEach(p => {
+        this.currentChosen.push({ teamId: t.id, socketId: p.id, name: p.name });
+      });
     }
 
     // lấy câu hỏi
@@ -203,13 +198,13 @@ class GameEngine {
     return { ok: true, round: this.round };
   }
 
-  isChosen(socketId) {
-    return this.currentChosen.some(c => c.socketId === socketId);
-  }
-
   submitAnswer(socketId, choice) {
     if (this.phase !== 'question') return { ok: false };
-    if (!this.isChosen(socketId)) return { ok: false };
+    const p = this.players.get(socketId);
+    if (!p) return { ok: false };
+    // chỉ người thuộc đội còn sống mới được trả lời
+    const team = this.team(p.teamId);
+    if (!team || !team.alive) return { ok: false };
     if (this.answers.has(socketId)) return { ok: false }; // đã trả lời
     const timeMs = Date.now() - this.questionStartAt;
     this.answers.set(socketId, { choice: Number(choice), timeMs });
@@ -221,12 +216,14 @@ class GameEngine {
   /**
    * Chốt đáp án (admin có thể override correctIndex).
    * Tính điểm, trừ HP đội sai, xác định đội thắng (đúng + nhanh nhất).
+   * Mỗi đội: đúng nếu có ít nhất 1 thành viên đúng; time = thành viên đúng nhanh nhất.
    */
   reveal(correctIndex = null) {
     if (this.phase !== 'question') return { ok: false };
     const correct = correctIndex !== null ? Number(correctIndex) : this.currentQuestion.correct;
     this.currentQuestion.correct = correct;
 
+    // Kết quả từng người chơi
     const results = [];
     for (const c of this.currentChosen) {
       const a = this.answers.get(c.socketId);
@@ -236,18 +233,35 @@ class GameEngine {
       results.push({ ...c, choice, timeMs, correct: isCorrect });
     }
 
-    // trừ HP đội sai (hoặc không trả lời)
-    const damaged = [];
+    // Gộp kết quả theo đội: đúng nếu có 1 thành viên đúng, time = nhanh nhất
+    const teamResults = new Map(); // teamId -> { correct, timeMs }
     for (const r of results) {
-      if (!r.correct) {
-        const t = this.team(r.teamId);
+      if (!teamResults.has(r.teamId)) {
+        teamResults.set(r.teamId, { correct: false, timeMs: Infinity });
+      }
+      const tr = teamResults.get(r.teamId);
+      if (r.correct && r.timeMs < tr.timeMs) {
+        tr.correct = true;
+        tr.timeMs = r.timeMs;
+      }
+    }
+
+    // Trừ HP đội sai (mỗi đội chỉ trừ 1 lần)
+    const damaged = [];
+    for (const [teamId, tr] of teamResults) {
+      if (!tr.correct) {
+        const t = this.team(teamId);
         if (t && t.alive) {
           t.hp = Math.max(0, t.hp - 1);
-          damaged.push(r.teamId);
+          damaged.push(teamId);
           if (t.hp === 0) t.alive = false;
         }
-      } else {
-        // cộng điểm cá nhân cho người trả lời đúng
+      }
+    }
+
+    // Cộng điểm cá nhân cho người trả lời đúng
+    for (const r of results) {
+      if (r.correct) {
         const p = this.players.get(r.socketId);
         if (p) {
           const speedBonus = Math.max(0, config.ANSWER_TIME * 1000 - r.timeMs);
@@ -256,9 +270,11 @@ class GameEngine {
       }
     }
 
-    // xác định đội thắng vòng: trong các đội đúng, nhanh nhất
-    const correctTeams = results.filter(r => r.correct).sort((a, b) => a.timeMs - b.timeMs);
-    this.winnerTeamId = correctTeams.length ? correctTeams[0].teamId : null;
+    // Đội thắng: trong các đội đúng, time nhanh nhất
+    const correctTeams = [...teamResults.entries()]
+      .filter(([_, tr]) => tr.correct)
+      .sort((a, b) => a[1].timeMs - b[1].timeMs);
+    this.winnerTeamId = correctTeams.length ? correctTeams[0][0] : null;
     this.pendingAttackerTeam = this.winnerTeamId;
 
     // lưu lịch sử

@@ -906,6 +906,40 @@ th {
 @media (max-width: 900px) { .proj-grid { grid-template-columns: 1fr; } }
 
 /* ====================================================================
+   Next-round countdown banner (hiện giữa các vòng)
+   ==================================================================== */
+.next-round-banner {
+  position: relative;
+  margin: 14px 0;
+  padding: 12px 20px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,.15), transparent 60%),
+    linear-gradient(180deg, var(--bg-glow), var(--bg-mid));
+  border-top: 3px double var(--gold);
+  border-bottom: 3px double var(--gold);
+  border-left: 1px solid var(--gold-dark);
+  border-right: 1px solid var(--gold-dark);
+  color: var(--gold-bright);
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.16em;
+  font-size: 14px;
+  text-transform: uppercase;
+  box-shadow: 0 6px 16px rgba(0,0,0,.4);
+  animation: countdown-pulse 1s ease-in-out infinite;
+}
+.next-round-banner b {
+  color: #fff;
+  font-size: 18px;
+  margin: 0 4px;
+  text-shadow: 0 0 8px var(--gold);
+}
+@keyframes countdown-pulse {
+  0%, 100% { box-shadow: 0 6px 16px rgba(0,0,0,.4), 0 0 0 rgba(240,209,117,0); }
+  50%      { box-shadow: 0 6px 16px rgba(0,0,0,.4), 0 0 24px rgba(240,209,117,.35); }
+}
+
+/* ====================================================================
    Banner đầu trang lớn (cho landing/projector)
    ==================================================================== */
 .banner-title {

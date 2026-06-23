@@ -7,8 +7,44 @@ const repo = require('../models/repository');
  * Một instance GameEngine được dùng chung cho cả phòng.
  */
 function registerSockets(io, engine) {
-  let timer = null;          // timer đếm ngược
+  let timer = null;          // timer đếm ngược câu hỏi / tấn công
   let timerEndsAt = 0;
+  let nextRoundTimer = null; // đếm ngược tự chuyển vòng
+  let nextRoundEndsAt = 0;
+  const NEXT_ROUND_DELAY = 5; // số giây chờ giữa các vòng
+
+  function clearNextRoundTimer() {
+    if (nextRoundTimer) { clearInterval(nextRoundTimer); nextRoundTimer = null; }
+    nextRoundEndsAt = 0;
+    io.emit('next-round-countdown', { active: false });
+  }
+
+  // Sau khi một vòng kết thúc (reveal/attack xong), đếm ngược rồi tự sang vòng mới.
+  function scheduleAutoAdvance() {
+    if (nextRoundTimer) clearInterval(nextRoundTimer); // hủy timer cũ (nếu có) nhưng KHÔNG emit false để tránh flicker
+    nextRoundEndsAt = Date.now() + NEXT_ROUND_DELAY * 1000;
+    io.emit('next-round-countdown', { active: true, seconds: NEXT_ROUND_DELAY, endsAt: nextRoundEndsAt });
+    nextRoundTimer = setInterval(() => {
+      const remain = Math.max(0, nextRoundEndsAt - Date.now());
+      if (remain <= 0) {
+        clearNextRoundTimer();
+        advanceToNextRound();
+      }
+    }, 250);
+  }
+
+  // Gọi sang vòng tiếp theo. Có thể được gọi tự động (auto-advance) hoặc do admin bấm.
+  function advanceToNextRound() {
+    if (engine.phase === 'finished' || engine.phase === 'lobby') return;
+    const r = engine.nextRound();
+    if (r.ok && !r.finished) beginQuestionPhase();
+    else {
+      clearTimer();
+      clearNextRoundTimer();
+      broadcastState();
+      io.emit('match-finished', { winnerTeamId: r.winnerTeamId });
+    }
+  }
 
   function broadcastState() {
     io.emit('state', engine.publicState());
@@ -42,11 +78,9 @@ function registerSockets(io, engine) {
   // ----- Logic điều phối trận -----
   function beginQuestionPhase() {
     broadcastState();
-    // gửi riêng cho từng người được chọn
-    engine.currentChosen.forEach(c => {
-      io.to(c.socketId).emit('your-turn', {
-        question: { text: engine.currentQuestion.text, options: engine.currentQuestion.options }
-      });
+    // Gửi câu hỏi cho TẤT CẢ người chơi để ai cũng có thể trả lời
+    io.emit('your-turn', {
+      question: { text: engine.currentQuestion.text, options: engine.currentQuestion.options }
     });
     startTimer(config.ANSWER_TIME, () => doReveal(null));
   }
@@ -80,7 +114,12 @@ function registerSockets(io, engine) {
           io.emit('attacked', { targetTeamId: t, auto: true });
         }
         broadcastState();
+        // Sau khi đội thắng đã tấn công xong (hoặc bị bỏ qua do hết giờ) → đếm ngược vòng mới
+        scheduleAutoAdvance();
       });
+    } else {
+      // Không có đội thắng (tất cả sai) → reveal phase → đếm ngược vòng mới luôn
+      scheduleAutoAdvance();
     }
     broadcastState();
   }
@@ -123,6 +162,8 @@ function registerSockets(io, engine) {
 
     socket.on('move', (pos) => {
       if (!pos) return;
+      // chỉ cho phép di chuyển khi đang ở sảnh chờ (lobby)
+      if (engine.phase !== 'lobby') return;
       engine.movePlayer(socket.id, pos.x, pos.y);
       // chỉ phát vị trí (nhẹ hơn cả state)
       socket.broadcast.emit('player-move', { id: socket.id, x: pos.x, y: pos.y });
@@ -139,7 +180,8 @@ function registerSockets(io, engine) {
       cb && cb(r);
       if (r.ok) {
         io.emit('answer-received', { teamId: engine.players.get(socket.id)?.teamId });
-        if (r.allAnswered) doReveal(null);
+        // KHÔNG tự chốt khi tất cả đã trả lời — phải chờ hết giờ câu hỏi
+        // (doReveal sẽ được gọi bởi startTimer khi timer expires)
       }
     });
 
@@ -154,6 +196,8 @@ function registerSockets(io, engine) {
         broadcastState();
         repo.updateHistoryAttack(engine.round, r.targetTeamId).catch(() => {});
         persistScores();
+        // Đã tấn công xong → đếm ngược vòng mới
+        scheduleAutoAdvance();
       }
     });
 
@@ -186,15 +230,16 @@ function registerSockets(io, engine) {
 
     socket.on('admin:next', (data, cb) => {
       if (!requireAdmin()) return cb && cb({ ok: false });
-      const r = engine.nextRound();
-      if (r.ok && !r.finished) beginQuestionPhase();
-      else { clearTimer(); broadcastState(); io.emit('match-finished', { winnerTeamId: r.winnerTeamId }); }
-      cb && cb(r);
+      // Bấm tay sẽ bỏ qua đếm ngược, chuyển vòng ngay
+      clearNextRoundTimer();
+      advanceToNextRound();
+      cb && cb({ ok: true });
     });
 
     socket.on('admin:reset', (data, cb) => {
       if (!requireAdmin()) return cb && cb({ ok: false });
       clearTimer();
+      clearNextRoundTimer();
       engine.reset();
       cb && cb({ ok: true });
       broadcastState();

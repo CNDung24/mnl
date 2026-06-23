@@ -242,7 +242,10 @@ socket.on('state', (s) => {
 });
 
 socket.on('your-turn', (data) => {
-  showQuestion(data.question);
+  // chỉ hiện câu hỏi mới khi round thực sự đổi
+  if (state && state.round !== lastShownRound) {
+    showQuestion(data.question);
+  }
 });
 
 socket.on('answer-received', () => {});
@@ -275,39 +278,54 @@ function hideAll() {
 function updatePhaseUI() {
   if (!state || !me) return;
   const label = document.getElementById('status-label');
-  const amChosen = state.currentChosen.some(c => c.socketId === socket.id);
+  const canvas = document.getElementById('lobby-canvas');
+  const banner = document.getElementById('next-round-banner');
 
   if (state.phase === 'lobby') {
-    label.textContent = 'SẢNH CHỜ - chờ admin bắt đầu';
+    label.textContent = '🏛️ SẢNH CHỜ - chờ admin bắt đầu';
     hideAll();
+    if (banner) banner.classList.add('hidden');
+    if (canvas) {
+      canvas.classList.remove('hidden');
+      fitCanvas();
+    }
   } else if (state.phase === 'question') {
-    label.textContent = 'VÒNG ' + state.round;
-    if (!amChosen) {
+    label.textContent = '⚔ VÒNG ' + state.round + ' — TRẢ LỜI CÂU HỎI';
+    if (canvas) canvas.classList.add('hidden');
+    if (banner) banner.classList.add('hidden');
+    // Hiện câu hỏi cho tất cả người chơi thuộc đội còn sống
+    const myTeam = state.teams.find(t => t.id === me.teamId);
+    if (myTeam && myTeam.alive && state.question) {
+      // Hiện lại câu hỏi nếu round đổi (vd: reload, hoặc vừa chuyển vòng)
+      if (state.round !== lastShownRound) showQuestion(state.question);
+    } else {
       hideAll();
       const sb = document.getElementById('spectate-box');
       sb.classList.remove('hidden');
-      const chosen = state.currentChosen.map(c => c.name).join(', ');
       document.getElementById('spectate-msg').innerHTML =
-        `👀 Đang thi đấu: <b>${chosen}</b><br>Cố lên đội mình!`;
-    }
-    // nếu được chọn nhưng chưa có box (vd reload) -> hiện từ state
-    if (amChosen && document.getElementById('question-box').classList.contains('hidden') && state.question) {
-      showQuestion(state.question);
+        `👀 Đội bạn đã bị loại — cổ vũ các đội khác nhé!`;
     }
   } else if (state.phase === 'attack') {
-    label.textContent = 'VÒNG ' + state.round + ' - TẤN CÔNG';
+    label.textContent = '⚔ VÒNG ' + state.round + ' — TẤN CÔNG';
+    if (canvas) canvas.classList.add('hidden');
     document.getElementById('question-box').classList.add('hidden');
   } else if (state.phase === 'reveal') {
-    label.textContent = 'VÒNG ' + state.round + ' - Kết quả';
+    label.textContent = '⚔ VÒNG ' + state.round + ' — Kết quả';
+    if (canvas) canvas.classList.add('hidden');
   } else if (state.phase === 'finished') {
+    label.textContent = '🏆 TRẬN ĐẤU KẾT THÚC';
     hideAll();
+    if (banner) banner.classList.add('hidden');
+    if (canvas) canvas.classList.add('hidden');
   }
 }
 
 // ---------- Câu hỏi ----------
 let answered = false;
+let lastShownRound = 0;  // vòng câu hỏi đang hiển thị trên màn hình
 function showQuestion(q) {
   answered = false;
+  lastShownRound = state ? state.round : 0;
   hideAll();
   const box = document.getElementById('question-box');
   box.classList.remove('hidden');
@@ -383,6 +401,23 @@ setInterval(() => {
   if (fill) fill.style.width = (remain / (timerData.seconds * 1000) * 100) + '%';
 }, 200);
 
+// ---------- Countdown tới vòng tiếp theo ----------
+let nextRoundData = null;
+socket.on('next-round-countdown', (d) => {
+  nextRoundData = d && d.active ? d : null;
+  renderNextRoundBanner();
+});
+function renderNextRoundBanner() {
+  const el = document.getElementById('next-round-banner');
+  if (!el) return;
+  if (!nextRoundData) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const sec = Math.max(0, Math.ceil((nextRoundData.endsAt - Date.now()) / 1000));
+  document.getElementById('next-round-text').innerHTML =
+    `⏳ Vòng tiếp theo bắt đầu sau <b>${sec}s</b>…`;
+}
+setInterval(renderNextRoundBanner, 250);
+
 // ============ LOBBY CANVAS ============
 const canvas = document.getElementById('lobby-canvas');
 const ctx = canvas.getContext('2d');
@@ -424,32 +459,38 @@ function startLobby() {
 let lastSent = 0;
 function loop(ts) {
   if (!me) return;
-  // di chuyển
-  let speed = 4;
-  let dx = 0, dy = 0;
-  if (keys['arrowleft'] || keys['a']) dx -= 1;
-  if (keys['arrowright'] || keys['d']) dx += 1;
-  if (keys['arrowup'] || keys['w']) dy -= 1;
-  if (keys['arrowdown'] || keys['s']) dy += 1;
-  if (joy.active) { dx += joy.dx; dy += joy.dy; }
+  // Chỉ cho phép di chuyển khi đang ở sảnh chờ
+  const canMove = state && state.phase === 'lobby';
+  if (canMove) {
+    let speed = 4;
+    let dx = 0, dy = 0;
+    if (keys['arrowleft'] || keys['a']) dx -= 1;
+    if (keys['arrowright'] || keys['d']) dx += 1;
+    if (keys['arrowup'] || keys['w']) dy -= 1;
+    if (keys['arrowdown'] || keys['s']) dy += 1;
+    if (joy.active) { dx += joy.dx; dy += joy.dy; }
 
-  if (dx || dy) {
-    const r = charRadius(me);
-    let nx = Math.max(r, Math.min(canvas.width - r, me.x + dx * speed));
-    let ny = Math.max(r, Math.min(canvas.height - r, me.y + dy * speed));
-    me.x = nx; me.y = ny;   // không va chạm, đi qua nhau được
+    if (dx || dy) {
+      const r = charRadius(me);
+      let nx = Math.max(r, Math.min(canvas.width - r, me.x + dx * speed));
+      let ny = Math.max(r, Math.min(canvas.height - r, me.y + dy * speed));
+      me.x = nx; me.y = ny;
 
-    me.lastMoveTime = Date.now();
-    if (dx > 0) me.facing = 1;
-    else if (dx < 0) me.facing = -1;
+      me.lastMoveTime = Date.now();
+      if (dx > 0) me.facing = 1;
+      else if (dx < 0) me.facing = -1;
 
-    if (ts - lastSent > 60) {
-      socket.emit('move', { x: me.x, y: me.y });
-      lastSent = ts;
+      if (ts - lastSent > 60) {
+        socket.emit('move', { x: me.x, y: me.y });
+        lastSent = ts;
+      }
     }
   }
 
-  render();
+  // Chỉ render canvas khi đang ở lobby
+  if (state && state.phase === 'lobby') {
+    render();
+  }
   requestAnimationFrame(loop);
 }
 
