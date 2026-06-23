@@ -1,125 +1,796 @@
-/* ===== Pixel-art arena theme ===== */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* ====================================================================
+   TRIẾT HỌC ARENA — Theme Đấu trường Athens
+   Cổ điển Hy Lạp · Đá cẩm thạch · Vàng đôi · Cột Corinthian
+   ==================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0f0c29;
-  --bg2: #1a1740;
-  --panel: #241f4d;
-  --accent: #ffe66d;
-  --accent2: #4ecdc4;
-  --danger: #ff6b6b;
-  --text: #f3f0ff;
-  --border: #4a3f8c;
+  /* Bầu trời đêm Athens */
+  --bg-deep:    #0a0716;
+  --bg-mid:     #14102b;
+  --bg-glow:    #1f1a3d;
+  --bg-dawn:    #2c2452;
+
+  /* Vàng kim - ánh đèn dầu trong đền */
+  --gold:        #c9a449;
+  --gold-bright: #f0d175;
+  --gold-dark:   #8b7332;
+  --gold-deep:   #5c4a1f;
+
+  /* Đá cẩm thạch / giấy papyrus */
+  --marble:        #f0ead6;
+  --marble-light:  #f8f3e0;
+  --marble-dark:   #d8cfa8;
+  --marble-shadow: #b8b08a;
+
+  /* Mực đen trên giấy */
+  --ink:       #1c0f08;
+  --ink-soft:  #3d2817;
+  --ink-deep:  #0a0503;
+
+  /* Bảng màu đất nung Hy Lạp (5 đội) */
+  --krater-red: #8b1a1a;
+  --aegean:     #2c5f8d;
+  --olive:      #5a8c4a;
+  --tyrian:     #6b3f8c;
+  --bronze:     #a67c52;
+
+  /* Vàng olive - đáp án đúng / chiến thắng */
+  --olive-gold: #b8941f;
+
+  --text-light:     #f0e3c1;
+  --text-on-marble: #1c0f08;
+
+  /* Cổ điển phụ */
+  --shadow-soft: rgba(0,0,0,0.4);
+  --shadow-deep: rgba(0,0,0,0.7);
 }
+
+/* ====================================================================
+   Body + nền trời đêm Athens (cột + sao + sương mù)
+   ==================================================================== */
+html, body { height: 100%; }
 
 body {
-  font-family: 'Press Start 2P', monospace;
-  background: linear-gradient(160deg, var(--bg), var(--bg2));
-  color: var(--text);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%,   rgba(240, 209, 117, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(107,  63, 140, 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-deep) 100%);
+  background-attachment: fixed;
+  color: var(--text-light);
   min-height: 100vh;
-  font-size: 12px;
-  line-height: 1.8;
-  image-rendering: pixelated;
+  font-size: 17px;
+  line-height: 1.55;
+  position: relative;
+  overflow-x: hidden;
 }
 
-.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+/* Lớp 1: sao lấp lánh rất nhỏ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(240,209,117,.7), transparent),
+    radial-gradient(1px 1px at 28%  8%, rgba(240,209,117,.5), transparent),
+    radial-gradient(1px 1px at 47% 22%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1px 1px at 65%  6%, rgba(240,209,117,.5), transparent),
+    radial-gradient(1px 1px at 82% 19%, rgba(255,255,255,.5), transparent),
+    radial-gradient(1px 1px at 91% 11%, rgba(240,209,117,.6), transparent),
+    radial-gradient(1px 1px at  7% 35%, rgba(255,255,255,.4), transparent),
+    radial-gradient(1px 1px at 38% 41%, rgba(240,209,117,.4), transparent),
+    radial-gradient(1px 1px at 73% 37%, rgba(255,255,255,.5), transparent);
+}
 
-h1, h2, h3 { color: var(--accent); text-shadow: 2px 2px 0 #000; margin-bottom: 16px; }
-h1 { font-size: 20px; }
-h2 { font-size: 15px; }
+/* Lớp 2: họa tiết meander (Greek key) rất nhạt */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><path d='M10 10h20v20h-10v-10h-10zM40 10h20v20h-10v-10h-10zM10 40h20v20h-10v-10h-10zM40 40h20v20h-10v-10h-10z' fill='none' stroke='%23c9a449' stroke-width='1.5'/></svg>");
+}
 
+/* ====================================================================
+   Container + tiêu đề
+   ==================================================================== */
+.container { max-width: 1100px; margin: 0 auto; padding: 28px; position: relative; z-index: 1; }
+.container.wide { max-width: 1400px; }
+.center { text-align: center; }
+.hidden { display: none !important; }
+.row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+
+h1, h2, h3 {
+  font-family: 'Cinzel', 'Cormorant Garamond', serif;
+  color: var(--gold-bright);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7), 0 0 24px rgba(240, 209, 117, 0.18);
+  margin-bottom: 18px;
+}
+
+h1 { font-size: 30px; text-transform: uppercase; text-align: center; }
+h2 { font-size: 20px; }
+h3 { font-size: 17px; }
+
+/* ====================================================================
+   PANEL — Bảng đá cẩm thạch viền vàng đôi + ornament 4 góc
+   ==================================================================== */
 .panel {
-  background: var(--panel);
-  border: 3px solid var(--border);
-  box-shadow: 0 0 0 3px #000, 6px 6px 0 rgba(0,0,0,.4);
-  padding: 20px;
-  margin-bottom: 20px;
+  position: relative;
+  background:
+    radial-gradient(ellipse at top left,     rgba(255,255,255,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at bottom right, rgba(139, 115, 82, 0.14) 0%, transparent 60%),
+    linear-gradient(180deg, var(--marble-light) 0%, var(--marble) 100%);
+  border-top:    4px double var(--gold);
+  border-bottom: 4px double var(--gold);
+  border-left:   1px solid  var(--gold-dark);
+  border-right:  1px solid  var(--gold-dark);
+  box-shadow:
+    0 0 0 1px rgba(201, 164, 73, 0.3) inset,
+    0 12px 32px var(--shadow-deep);
+  padding: 32px 36px 28px;
+  margin-bottom: 28px;
+  color: var(--text-on-marble);
 }
 
-label { display: block; margin: 14px 0 6px; color: var(--accent2); }
+/* Vạch meander trên đầu panel (chỉ trang trí) */
+.panel > .meander-top,
+.panel > .meander-bottom {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 10px;
+  background-repeat: repeat-x;
+  background-size: 80px 10px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.panel > .meander-top    { top: -1px; }
+.panel > .meander-bottom { bottom: -1px; transform: translateX(-50%) scaleY(-1); }
+
+/* Ornaments góc trên (◆) */
+.panel::before, .panel::after {
+  content: '◆';
+  position: absolute;
+  top: -10px;
+  color: var(--gold-bright);
+  font-size: 16px;
+  line-height: 1;
+  text-shadow: 0 0 6px var(--gold), 0 0 2px var(--bg-deep);
+}
+.panel::before { left: 18px;  transform: rotate(45deg); }
+.panel::after  { right: 18px; transform: rotate(45deg); }
+
+/* Heading trong panel */
+.panel h1, .panel h2, .panel h3 {
+  color: var(--ink);
+  text-shadow: none;
+  text-align: left;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--gold-dark);
+  padding-bottom: 10px;
+  position: relative;
+}
+.panel h1 { font-size: 22px; text-align: center; }
+.panel h2 { font-size: 19px; }
+
+/* ====================================================================
+   Label + Input (giấy papyrus)
+   ==================================================================== */
+label {
+  display: block;
+  margin: 16px 0 8px;
+  color: var(--ink-soft);
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
 
 input, select, textarea {
   width: 100%;
-  font-family: inherit;
-  font-size: 11px;
-  padding: 12px;
-  background: #14102e;
-  color: var(--text);
-  border: 2px solid var(--border);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--ink);
+  border: 1px solid var(--gold-dark);
   outline: none;
+  transition: all 0.2s;
+  border-radius: 0;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input:focus, select:focus, textarea:focus {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 164, 73, 0.35);
+}
 
+/* ====================================================================
+   BUTTONS — đá chạm khắc cổ điển
+   ==================================================================== */
 button, .btn {
-  font-family: inherit;
-  font-size: 12px;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
   cursor: pointer;
-  padding: 14px 18px;
-  background: var(--accent2);
-  color: #062b28;
-  border: none;
-  box-shadow: 0 4px 0 #1c7a72, 0 0 0 3px #000;
-  transition: transform .05s;
-  margin-top: 8px;
+  padding: 14px 26px;
+  background: linear-gradient(180deg, var(--marble-light), var(--marble));
+  color: var(--ink);
+  border: 1px solid var(--gold);
+  border-top: 3px double var(--gold);
+  border-bottom: 3px double var(--gold);
+  box-shadow: 0 3px 0 var(--gold-dark), 0 6px 14px rgba(0, 0, 0, 0.45);
+  transition: all 0.15s;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  position: relative;
+  border-radius: 0;
 }
-button:hover, .btn:hover { filter: brightness(1.1); }
-button:active, .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #1c7a72, 0 0 0 3px #000; }
-button.danger { background: var(--danger); color: #2b0606; box-shadow: 0 4px 0 #a83232, 0 0 0 3px #000; }
-button.gold { background: var(--accent); color: #2b2406; box-shadow: 0 4px 0 #b09b2e, 0 0 0 3px #000; }
-button:disabled { opacity: .4; cursor: not-allowed; }
+button:hover, .btn:hover {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--bg-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 var(--gold-dark), 0 8px 18px rgba(0,0,0,.55);
+}
+button:active, .btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--gold-dark);
+}
+button.gold {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--bg-deep);
+  border-color: var(--gold-dark);
+  font-weight: 700;
+}
+button.gold:hover {
+  background: linear-gradient(180deg, #f6dc8a, var(--gold-bright));
+}
+button.danger {
+  background: linear-gradient(180deg, #b32424, var(--krater-red));
+  color: var(--marble-light);
+  border-color: #5a1010;
+}
+button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-.row { display: flex; gap: 12px; flex-wrap: wrap; }
-.center { text-align: center; }
-.hidden { display: none !important; }
+/* ====================================================================
+   Team colors (bình gốm Hy Lạp)
+   ==================================================================== */
+.team-1 { color: var(--krater-red); }
+.team-2 { color: var(--aegean); }
+.team-3 { color: var(--olive); }
+.team-4 { color: var(--gold); }
+.team-5 { color: var(--tyrian); }
 
-/* ===== Team colors ===== */
-.team-1 { color: #e74c3c; } .team-2 { color: #3498db; }
-.team-3 { color: #2ecc71; } .team-4 { color: #f1c40f; } .team-5 { color: #9b59b6; }
-
-/* ===== Character grid ===== */
+/* ====================================================================
+   Character grid (gallery triết gia)
+   ==================================================================== */
 .char-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
-  gap: 8px;
-  max-height: 280px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  max-height: 320px;
   overflow-y: auto;
-  padding: 6px;
-  border: 2px solid var(--border);
-  background: #14102e;
+  padding: 14px;
+  background:
+    repeating-linear-gradient(45deg, rgba(28,15,8,0.04) 0 2px, transparent 2px 8px),
+    rgba(28, 15, 8, 0.10);
+  border: 1px solid var(--gold-dark);
+  border-top: 3px double var(--gold);
+  border-bottom: 3px double var(--gold);
 }
 .char-cell {
   aspect-ratio: 1;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  font-size: 26px;
-  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  border: 2px solid var(--bronze);
   cursor: pointer;
-  background: #1e1947;
+  background:
+    radial-gradient(ellipse at top left, rgba(255,255,255,.7), transparent 60%),
+    var(--marble-light);
+  color: var(--ink);
+  position: relative;
+  transition: all 0.15s;
 }
-.char-cell:hover { border-color: var(--accent2); }
-.char-cell.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+.char-cell:hover {
+  border-color: var(--gold);
+  background:
+    radial-gradient(ellipse at top left, rgba(255,255,255,.7), transparent 60%),
+    var(--marble);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.char-cell.sel {
+  border-color: var(--gold-bright);
+  box-shadow:
+    0 0 0 3px var(--gold-bright),
+    0 0 22px rgba(240, 209, 117, 0.55);
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+  color: var(--bg-deep);
+}
 .char-cell.taken {
   opacity: 0.35;
-  filter: grayscale(1);
+  filter: grayscale(0.7);
   cursor: not-allowed;
   pointer-events: none;
-  position: relative;
 }
 .char-cell.taken::after {
-  content: 'Đã chọn';
+  content: 'ĐÃ CHỌN';
   position: absolute;
-  top: 2px; right: 4px;
-  font-size: 5px;
-  color: #fff;
-  background: rgba(0,0,0,0.6);
-  padding: 1px 3px;
-  border-radius: 2px;
+  top: 4px; right: 4px;
+  font-size: 8px;
+  font-family: 'Cinzel', serif;
+  color: var(--marble-light);
+  background: rgba(28, 15, 8, 0.75);
+  padding: 2px 5px;
+  border: 1px solid var(--gold-dark);
+  letter-spacing: 0.1em;
 }
-.char-cell .nm { font-size: 6px; margin-top: 4px; color: #bbb; text-align: center; }
+.char-cell .nm {
+  font-size: 10px;
+  margin-top: 6px;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
+  text-align: center;
+  color: var(--ink-soft);
+}
 
-/* Sprite animation: dùng CSS steps() cuộn ngang sprite sheet */
+/* ====================================================================
+   Team picker — khiên/áo choàng
+   ==================================================================== */
+.team-pick {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.team-pick .tp {
+  padding: 18px 4px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid var(--bronze);
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,.5), transparent 60%),
+    var(--marble-light);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  font-weight: 600;
+  color: var(--ink);
+  position: relative;
+}
+.team-pick .tp::before {
+  content: '⚔';
+  display: block;
+  font-size: 18px;
+  margin-bottom: 4px;
+  color: var(--gold-dark);
+}
+.team-pick .tp:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+.team-pick .tp.sel {
+  border-color: var(--gold-bright);
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+  color: var(--bg-deep);
+  box-shadow:
+    0 0 18px rgba(240, 209, 117, 0.55),
+    inset 0 0 12px rgba(140, 100, 30, 0.4);
+  transform: scale(1.05);
+}
+.team-pick .tp.sel::before { color: var(--bg-deep); }
+
+/* ====================================================================
+   Reactions (emoji bay) — khay vàng
+   ==================================================================== */
+.reaction-bar {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  gap: 10px;
+  z-index: 60;
+  background:
+    linear-gradient(180deg, var(--marble-light), var(--marble));
+  border: 2px solid var(--gold);
+  border-top: 3px double var(--gold);
+  border-bottom: 3px double var(--gold);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  padding: 8px;
+}
+.reaction-btn {
+  width: 50px;
+  height: 50px;
+  font-size: 28px;
+  padding: 0;
+  margin: 0;
+  background: var(--marble-light);
+  border: 1px solid var(--gold-dark);
+  box-shadow: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.reaction-btn:hover {
+  background: var(--gold-bright);
+  transform: scale(1.15);
+}
+
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  overflow: hidden;
+}
+.fx-emoji {
+  position: absolute;
+  font-size: 36px;
+  animation: fx-fly 1.8s ease-out forwards;
+  text-shadow: 0 2px 0 #000, 0 0 12px rgba(0, 0, 0, 0.7);
+  user-select: none;
+}
+@keyframes fx-fly {
+  0%   { transform: translate(-50%, 0)     scale(0.4); opacity: 0; }
+  20%  { transform: translate(-50%, -20px) scale(1.3); opacity: 1; }
+  100% { transform: translate(-50%, -140px) scale(1);   opacity: 0; }
+}
+
+/* ====================================================================
+   Lobby canvas — Quảng trường Athens với cột mờ ở hai bên
+   ==================================================================== */
+#game-screen.container {
+  max-width: none;
+  margin: 0;
+  padding: 14px 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.team-hp-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin: 12px 0;
+}
+.team-hp-row .team-card {
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,.5), transparent 60%),
+    var(--marble);
+  border: 1px solid var(--gold);
+  border-top: 3px double var(--gold);
+  padding: 10px 14px;
+  margin: 0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+.team-hp-row .team-card.dead {
+  opacity: 0.4;
+  filter: grayscale(0.85);
+}
+.team-hp-row .hp-bar { height: 14px; }
+
+#lobby-canvas {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 90px);
+  background:
+    /* Cột mờ ở 2 bên (silhouette) */
+    linear-gradient(90deg, rgba(14,10,31,.95) 0%, transparent 8%, transparent 92%, rgba(14,10,31,.95) 100%),
+    radial-gradient(ellipse 60% 40% at 50% 5%, rgba(240, 209, 117, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at center, var(--bg-glow) 0%, var(--bg-deep) 80%);
+  border: 3px double var(--gold);
+  box-shadow:
+    0 0 0 1px var(--gold-dark),
+    0 0 32px rgba(240, 209, 117, 0.22),
+    inset 0 0 70px rgba(0, 0, 0, 0.6);
+  touch-action: none;
+  margin-top: 12px;
+  position: relative;
+}
+/* Cột silhouette hai bên canvas (dùng pseudo-element của body khi ở game) */
+body.in-lobby #lobby-canvas::before,
+body.in-lobby #lobby-canvas::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 60px;
+  pointer-events: none;
+  opacity: 0.35;
+  background-repeat: no-repeat;
+  background-size: 60px 100%;
+}
+body.in-lobby #lobby-canvas::before {
+  left: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 600' preserveAspectRatio='none'><rect x='6' y='20' width='48' height='30' fill='%23a67c52' opacity='.6'/><rect x='4' y='50' width='52' height='500' fill='%23a67c52' opacity='.5'/><polygon points='4,50 30,5 56,50' fill='%23a67c52' opacity='.55'/><rect x='2' y='550' width='56' height='40' fill='%23a67c52' opacity='.6'/></svg>");
+}
+body.in-lobby #lobby-canvas::after {
+  right: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 600' preserveAspectRatio='none'><rect x='6' y='20' width='48' height='30' fill='%23a67c52' opacity='.6'/><rect x='4' y='50' width='52' height='500' fill='%23a67c52' opacity='.5'/><polygon points='4,50 30,5 56,50' fill='%23a67c52' opacity='.55'/><rect x='2' y='550' width='56' height='40' fill='%23a67c52' opacity='.6'/></svg>");
+  transform: scaleX(-1);
+}
+
+/* ====================================================================
+   Joystick — khiên Athena
+   ==================================================================== */
+#joystick {
+  position: fixed; bottom: 30px; left: 30px;
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  background: rgba(240, 234, 214, 0.10);
+  border: 3px double var(--gold);
+  box-shadow:
+    0 0 0 1px var(--gold-dark),
+    0 0 24px rgba(0, 0, 0, 0.55);
+  touch-action: none;
+  z-index: 50;
+}
+#joystick .stick {
+  position: absolute;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--gold-bright), var(--gold-dark));
+  left: 35px; top: 35px;
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 0 14px var(--gold);
+}
+
+/* ====================================================================
+   ANSWER BUTTONS — Bảng đá khắc chữ Hy Lạp (Α Β Γ Δ)
+   ==================================================================== */
+.answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+.ans-btn {
+  position: relative;
+  padding: 22px 22px 22px 64px;
+  font-size: 16px;
+  text-align: left;
+  font-family: 'Cormorant Garamond', serif;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at top left, rgba(255,255,255,.7), transparent 55%),
+    linear-gradient(180deg, var(--marble-light), var(--marble));
+  border: 2px solid var(--gold-dark);
+  border-top: 3px double var(--gold);
+  border-bottom: 3px double var(--gold);
+  box-shadow:
+    0 0 0 1px rgba(201, 164, 73, 0.35) inset,
+    0 5px 14px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s;
+  min-height: 64px;
+  cursor: pointer;
+}
+.ans-btn::before {
+  content: attr(data-gr);
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--bg-deep);
+  background:
+    radial-gradient(circle, var(--gold-bright), var(--gold));
+  border: 2px solid var(--gold-dark);
+  border-radius: 50%;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  box-shadow: 0 2px 4px rgba(0,0,0,.4), inset 0 -2px 4px rgba(140,100,30,.4);
+}
+.ans-btn:hover {
+  background:
+    radial-gradient(ellipse at top left, rgba(255,255,255,.85), transparent 55%),
+    linear-gradient(180deg, var(--marble), var(--marble-dark));
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px var(--gold) inset,
+    0 8px 18px rgba(0, 0, 0, 0.5);
+}
+.ans-btn.picked {
+  outline: none;
+  border-color: var(--gold-bright);
+  background:
+    radial-gradient(ellipse at top left, rgba(240, 209, 117, .4), transparent 55%),
+    linear-gradient(180deg, var(--marble-light), #efe2b5);
+  box-shadow:
+    0 0 0 3px var(--gold-bright),
+    0 8px 18px rgba(240, 209, 117, 0.4);
+}
+.ans-btn.picked::before {
+  background: radial-gradient(circle, #fff8d6, var(--gold-bright));
+}
+/* Khi admin chốt - đáp án đúng */
+.ans-btn.correct {
+  border-color: var(--olive-gold);
+  background:
+    radial-gradient(ellipse at top left, rgba(184, 148, 31, .25), transparent 55%),
+    linear-gradient(180deg, #f4e4a4, #d9c067);
+  box-shadow:
+    0 0 0 3px var(--olive-gold),
+    0 8px 18px rgba(184, 148, 31, 0.45);
+}
+.ans-btn.correct::before {
+  background: radial-gradient(circle, #fff8d6, var(--olive-gold));
+  color: #4a3a08;
+}
+.ans-btn.wrong {
+  opacity: 0.45;
+  filter: grayscale(0.5);
+}
+
+/* ====================================================================
+   HP bars — phiến đá có khắc số
+   ==================================================================== */
+.team-card { margin-bottom: 16px; }
+.hp-bar {
+  height: 22px;
+  background:
+    linear-gradient(180deg, var(--marble-shadow), var(--marble-dark));
+  border: 1px solid var(--gold-dark);
+  position: relative;
+  margin-top: 6px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.25);
+}
+.hp-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-dark));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(0,0,0,.2);
+}
+.hp-text {
+  position: absolute;
+  right: 8px; top: 2px;
+  font-size: 11px;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  color: var(--ink);
+  text-shadow: 0 0 4px var(--marble-light);
+}
+.dead { opacity: 0.4; filter: grayscale(0.7); }
+
+/* ====================================================================
+   Timer — đồng hồ cát
+   ==================================================================== */
+.timer {
+  font-family: 'Cinzel', serif;
+  font-size: 32px;
+  color: var(--krater-red);
+  text-shadow:
+    0 0 10px rgba(139, 26, 26, 0.7),
+    2px 2px 0 #000;
+  font-weight: 700;
+}
+.timer-bar {
+  height: 14px;
+  background:
+    linear-gradient(180deg, var(--marble-shadow), var(--marble-dark));
+  border: 1px solid var(--gold-dark);
+  margin-top: 10px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.3);
+}
+.timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--krater-red), #c0392b);
+  transition: width 0.25s linear;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3);
+}
+
+/* ====================================================================
+   Shake effect (khi bị tấn công)
+   ==================================================================== */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px) rotate(-2deg); }
+  40% { transform: translateX(10px)  rotate(2deg); }
+  60% { transform: translateX(-8px); }
+  80% { transform: translateX(8px); }
+}
+.shake { animation: shake 0.5s; }
+
+.big-emoji { font-size: 56px; }
+
+/* ====================================================================
+   Table (lịch sử)
+   ==================================================================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: 'Cormorant Garamond', serif;
+  background: rgba(255,255,255,.4);
+}
+th, td {
+  border: 1px solid var(--gold-dark);
+  padding: 8px 10px;
+  text-align: left;
+  color: var(--ink);
+}
+th {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--bg-deep);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ====================================================================
+   Menu links (trang chủ)
+   ==================================================================== */
+.menu-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 28px;
+}
+.menu-links .btn {
+  font-size: 14px;
+  padding: 20px 34px;
+  min-width: 240px;
+  font-weight: 700;
+}
+
+/* ====================================================================
+   Toast (thông báo) — biểu ngữ cuộn giấy
+   ==================================================================== */
+.toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,.15), transparent 60%),
+    linear-gradient(180deg, var(--krater-red), #6a0e0e);
+  color: var(--marble-light);
+  padding: 14px 28px;
+  border: 2px double var(--gold);
+  border-top: 3px double var(--gold);
+  border-bottom: 3px double var(--gold);
+  z-index: 100;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6);
+  font-weight: 600;
+}
+.toast::before, .toast::after {
+  content: '✦';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold-bright);
+  font-size: 14px;
+}
+.toast::before { left: 8px; }
+.toast::after  { right: 8px; }
+
+/* ====================================================================
+   Sprite animation
+   ==================================================================== */
 .char-sprite {
   display: block;
   background-repeat: no-repeat;
@@ -134,150 +805,255 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 }
 .char-sprite.idle, .big-sprite.idle {
   animation-play-state: paused;
-  background-position: 0 0;   /* đứng ở frame đầu */
+  background-position: 0 0;
 }
-.char-emoji { font-size: 26px; line-height: 1; }
-
-/* Sprite lớn cho máy chiếu */
+.char-emoji { font-size: 30px; line-height: 1; }
 .big-sprite {
   display: block;
   background-repeat: no-repeat;
   background-size: calc(var(--fw) * var(--frames)) 100%;
   image-rendering: pixelated;
   animation: char-play 0.8s steps(var(--frames)) infinite;
-  margin: 0 auto 8px;
+  margin: 0 auto 10px;
 }
 
-.team-pick { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; }
-.team-pick .tp {
-  padding: 12px 4px; text-align: center; cursor: pointer;
-  border: 2px solid var(--border); background: #1e1947; font-size: 9px;
+/* ====================================================================
+   Subtitle Hy Lạp
+   ==================================================================== */
+.greek-subtitle {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  font-style: italic;
+  text-align: center;
+  margin-top: -10px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  text-transform: uppercase;
+  opacity: 0.9;
 }
-.team-pick .tp.sel { border-color: #fff; background: var(--accent); box-shadow: 0 0 0 3px #fff inset, 0 0 12px var(--accent); color: #fff; transform: scale(1.05); }
-
-/* ===== Reactions ===== */
-.reaction-bar {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  display: flex;
-  gap: 8px;
-  z-index: 60;
-  background: rgba(10, 8, 32, 0.7);
-  border: 2px solid var(--border);
-  box-shadow: 0 0 0 3px #000;
-  padding: 6px;
-  border-radius: 6px;
-}
-.reaction-btn {
-  width: 48px;
-  height: 48px;
-  font-size: 26px;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  border: 2px solid transparent;
-  box-shadow: none;
-  cursor: pointer;
-  filter: grayscale(0.2);
-  transition: transform .1s, filter .1s;
-}
-.reaction-btn:hover { filter: grayscale(0); transform: scale(1.15); }
-.reaction-btn:active { transform: scale(0.95); }
-
-/* Layer để hiển thị emoji bay lên trên nhân vật */
-.fx-layer {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 55;
-  overflow: hidden;
-}
-.fx-emoji {
-  position: absolute;
-  font-size: 32px;
-  animation: fx-fly 1.6s ease-out forwards;
-  text-shadow: 0 2px 0 #000, 0 0 8px rgba(0,0,0,.6);
-  user-select: none;
-}
-@keyframes fx-fly {
-  0%   { transform: translate(-50%, 0)    scale(0.4); opacity: 0; }
-  20%  { transform: translate(-50%, -20px) scale(1.2); opacity: 1; }
-  100% { transform: translate(-50%, -120px) scale(1);   opacity: 0; }
+.greek-subtitle .gr {
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  margin: 0 8px;
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(240, 209, 117, 0.4);
 }
 
-/* ===== Lobby canvas (full màn hình) ===== */
-/* Phá vỡ giới hạn .container (max-width 1000px) cho sảnh chờ */
-#game-screen.container {
-  max-width: none;
-  margin: 0;
-  padding: 8px 16px;
+/* ====================================================================
+   Greek divider (meander)
+   ==================================================================== */
+.greek-divider {
   width: 100%;
-  box-sizing: border-box;
+  height: 14px;
+  margin: 16px 0;
+  background-repeat: repeat-x;
+  background-size: 80px 14px;
+  background-position: center;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 14' width='80' height='14'><path d='M2 12h14v-10h-6v4h-8zM22 12h14v-10h-6v4h-8zM42 12h14v-10h-6v4h-8zM62 12h14v-10h-6v4h-8z' fill='none' stroke='%23c9a449' stroke-width='2'/></svg>");
+  opacity: 0.8;
 }
 
-/* Thanh máu 5 đội (lobby + game) */
-.team-hp-row {
+/* ====================================================================
+   Projector (riêng cho màn hình lớn)
+   ==================================================================== */
+.proj-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+.teams-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  margin-top: 6px;
+  gap: 14px;
+  margin-bottom: 22px;
 }
-.team-hp-row .team-card {
-  background: #1a1640;
-  border: 2px solid var(--border);
-  padding: 8px 10px;
-  margin: 0;
+.big-q {
+  font-size: 24px;
+  min-height: 80px;
+  line-height: 1.5;
+  font-style: italic;
+  color: var(--ink);
 }
-.team-hp-row .team-card.dead { opacity: .35; filter: grayscale(1); }
-.team-hp-row .hp-bar { height: 14px; }
-#lobby-canvas {
-  display: block; width: 100%; height: calc(100vh - 70px);
-  background: #0a0820;
-  border: 3px solid var(--border); box-shadow: 0 0 0 3px #000; touch-action: none;
+.proj-timer {
+  font-size: 72px;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  color: var(--krater-red);
+  text-shadow:
+    0 0 16px rgba(139, 26, 26, 0.7),
+    3px 3px 0 #000;
+}
+.vs-chosen {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  text-align: center;
+}
+.chosen-card {
+  padding: 16px 12px;
+  border: 2px solid var(--gold);
+  border-top: 3px double var(--gold);
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,.5), transparent 60%),
+    var(--marble);
+  color: var(--ink);
+  box-shadow: 0 6px 14px rgba(0,0,0,.3);
+}
+.lb-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--gold-dark);
+  font-size: 13px;
+}
+@media (max-width: 900px) { .proj-grid { grid-template-columns: 1fr; } }
+
+/* ====================================================================
+   Banner đầu trang lớn (cho landing/projector)
+   ==================================================================== */
+.banner-title {
+  position: relative;
+  font-family: 'Cinzel', serif;
+  text-align: center;
+  font-size: 44px;
+  font-weight: 800;
+  color: var(--gold-bright);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin: 12px 0 6px;
+  text-shadow:
+    0 0 20px rgba(240, 209, 117, 0.5),
+    0 4px 8px rgba(0,0,0,.7);
+}
+.banner-title::before, .banner-title::after {
+  content: '✦';
+  display: inline-block;
+  margin: 0 18px;
+  font-size: 22px;
+  color: var(--gold);
+  vertical-align: middle;
+  opacity: 0.85;
+}
+.banner-sub {
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-style: italic;
+  color: var(--gold);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+/* ====================================================================
+   Helper classes
+   ==================================================================== */
+.muted { color: var(--ink-soft); font-style: italic; }
+.pill {
+  display: inline-block;
+  padding: 3px 10px;
+  background: var(--marble);
+  color: var(--ink);
+  border: 1px solid var(--gold-dark);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.phase-info {
+  margin-top: 14px;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+.cur-q-text {
+  margin-bottom: 16px;
+  font-style: italic;
+  font-size: 19px;
+  color: var(--ink);
+  line-height: 1.5;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.4);
+  border-left: 3px solid var(--gold);
+  border-right: 1px solid var(--gold-dark);
+}
+.hint-label {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.hint-block {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+  line-height: 1.7;
+}
+.hint-block code {
+  background: rgba(28,15,8,.1);
+  padding: 2px 6px;
+  font-size: 12px;
+  border: 1px solid var(--gold-dark);
+  color: var(--ink);
+}
+.answers-row { gap: 12px; flex-wrap: wrap; }
+.status-line { margin-top: 12px; font-size: 13px; color: var(--ink-soft); font-style: italic; }
+.row-wrap { flex-wrap: wrap; gap: 8px; }
+
+/* ====================================================================
+   Admin question editor (card mỗi câu)
+   ==================================================================== */
+.q-editor-card {
+  background:
+    radial-gradient(ellipse at top left, rgba(255,255,255,.7), transparent 55%),
+    linear-gradient(180deg, var(--marble-light), var(--marble));
+  padding: 22px 26px;
+  margin-bottom: 18px;
+  border-top: 3px double var(--gold);
+  border-bottom: 3px double var(--gold);
+}
+.q-editor-card label:first-of-type {
+  margin-top: 0;
+  font-size: 13px;
+  color: var(--gold-dark);
+}
+.q-editor-opt {
+  align-items: center;
   margin-top: 8px;
+  gap: 10px;
 }
-
-/* Joystick */
-#joystick {
-  position: fixed; bottom: 30px; left: 30px; width: 120px; height: 120px;
-  border-radius: 50%; background: rgba(255,255,255,.08);
-  border: 3px solid var(--border); touch-action: none; z-index: 50;
+.opt-letter {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--bg-deep);
+  background: radial-gradient(circle, var(--gold-bright), var(--gold));
+  border: 2px solid var(--gold-dark);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  flex-shrink: 0;
 }
-#joystick .stick {
-  position: absolute; width: 50px; height: 50px; border-radius: 50%;
-  background: var(--accent2); left: 35px; top: 35px; box-shadow: 0 0 0 3px #000;
+.opt-input { flex: 1; }
+.opt-correct {
+  margin: 0;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  width: auto;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-size: 13px;
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--ink-soft);
 }
+.opt-correct input[type="radio"] { width: auto; }
+.q-editor-del { margin-top: 12px; font-size: 11px; padding: 10px 18px; }
 
-/* ===== Answer buttons ===== */
-.answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
-.ans-btn { padding: 22px 12px; font-size: 12px; text-align: left; }
-.ans-A { background: #ff6b6b; box-shadow: 0 4px 0 #b33; color:#fff; }
-.ans-B { background: #4ecdc4; box-shadow: 0 4px 0 #277; color:#042; }
-.ans-C { background: #ffe66d; box-shadow: 0 4px 0 #aa3; color:#420; }
-.ans-D { background: #a78bfa; box-shadow: 0 4px 0 #639; color:#fff; }
-.ans-btn.picked { outline: 4px solid #fff; }
-
-/* ===== HP bars ===== */
-.team-card { margin-bottom: 14px; }
-.hp-bar { height: 22px; background: #14102e; border: 2px solid var(--border); position: relative; }
-.hp-fill { height: 100%; transition: width .4s; }
-.hp-text { position: absolute; right: 6px; top: 2px; font-size: 9px; }
-.dead { opacity: .35; filter: grayscale(1); }
-
-/* timer */
-.timer { font-size: 28px; color: var(--danger); text-shadow: 2px 2px 0 #000; }
-.timer-bar { height: 12px; background:#14102e; border:2px solid var(--border); margin-top:8px; }
-.timer-fill { height:100%; background: var(--danger); transition: width .25s linear; }
-
-/* shake effect */
-@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
-.shake { animation: shake .4s; }
-
-.big-emoji { font-size: 48px; }
-table { width: 100%; border-collapse: collapse; font-size: 9px; }
-th, td { border: 1px solid var(--border); padding: 6px; text-align: left; }
-th { background: #1e1947; color: var(--accent); }
-.menu-links a { display:inline-block; margin: 8px; }
-.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-  background: var(--danger); color:#fff; padding: 12px 20px; border: 2px solid #000; z-index: 100; }
+/* ====================================================================
+   Answer button text wrap (Greek badge + text)
+   ==================================================================== */
+.ans-btn .ans-text { display: inline-block; padding-left: 0; }
+.ans-btn { line-height: 1.4; }

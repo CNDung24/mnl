@@ -182,6 +182,7 @@ document.getElementById('join-btn').onclick = () => {
     me.facing = 1;  // 1 = phải, -1 = trái
     document.getElementById('join-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
+    document.body.classList.add('in-lobby');
     const t = TEAMS.find(x => x.id === me.teamId);
     document.getElementById('me-info').innerHTML =
       `${charMap[me.characterId].emoji} ${me.name} <span class="team-${me.teamId}">[${t.name}]</span>`;
@@ -315,11 +316,13 @@ function showQuestion(q) {
   document.getElementById('q-wait').classList.add('hidden');
   const wrap = document.getElementById('q-answers');
   wrap.innerHTML = '';
-  const letters = ['A', 'B', 'C', 'D'];
+  const letters = ['Α', 'Β', 'Γ', 'Δ'];
+  const latin  = ['A', 'B', 'C', 'D'];
   q.options.forEach((opt, i) => {
     const b = document.createElement('button');
-    b.className = 'ans-btn ans-' + letters[i];
-    b.innerHTML = `<b>${letters[i]}.</b> ${opt}`;
+    b.className = 'ans-btn ans-' + latin[i];
+    b.setAttribute('data-gr', letters[i]);
+    b.innerHTML = `<span class="ans-text">${escapeHtml(opt)}</span>`;
     b.onclick = () => sendAnswer(i, b);
     wrap.appendChild(b);
   });
@@ -337,8 +340,11 @@ function sendAnswer(choice, btn) {
 function highlightCorrect(correct) {
   const btns = document.querySelectorAll('#q-answers .ans-btn');
   btns.forEach((b, i) => {
-    if (i === correct) b.style.outline = '4px solid #2ecc71';
-    else b.style.opacity = '.4';
+    if (i === correct) {
+      b.classList.add('correct');
+    } else {
+      b.classList.add('wrong');
+    }
   });
 }
 
@@ -547,4 +553,9 @@ function toast(msg) {
   d.textContent = msg;
   document.body.appendChild(d);
   setTimeout(() => d.remove(), 2500);
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }

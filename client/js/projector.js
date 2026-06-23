@@ -113,12 +113,14 @@ function renderQuestion() {
     document.getElementById('q-text').textContent = state.question.text;
     const el = document.getElementById('q-options');
     el.innerHTML = '';
-    const letters = ['A','B','C','D'];
+    const letters = ['Α','Β','Γ','Δ'];
+    const latin  = ['A','B','C','D'];
     state.question.options.forEach((opt, i) => {
       const d = document.createElement('div');
-      d.className = 'ans-btn ans-' + letters[i];
+      d.className = 'ans-btn ans-' + latin[i];
       d.id = 'proj-opt-' + i;
-      d.innerHTML = `<b>${letters[i]}.</b> ${opt}`;
+      d.setAttribute('data-gr', letters[i]);
+      d.innerHTML = `<span class="ans-text">${escapeHtml(opt)}</span>`;
       el.appendChild(d);
     });
   } else if (state.phase === 'lobby') {
@@ -127,13 +129,18 @@ function renderQuestion() {
 }
 
 function highlightCorrect(correct) {
-  const letters = ['A','B','C','D'];
-  letters.forEach((l, i) => {
+  const latin = ['A','B','C','D'];
+  latin.forEach((l, i) => {
     const d = document.getElementById('proj-opt-' + i);
     if (!d) return;
-    if (i === correct) d.style.outline = '5px solid #2ecc71';
-    else d.style.opacity = '.35';
+    if (i === correct) d.classList.add('correct');
+    else d.classList.add('wrong');
   });
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
 function renderLeaderboard() {

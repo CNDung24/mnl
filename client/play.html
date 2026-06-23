@@ -9,26 +9,29 @@
 <body>
   <!-- B1: Form tham gia -->
   <div id="join-screen" class="container">
-    <h1 class="center">⚔️ THAM GIA ⚔️</h1>
+    <h1 class="banner-title" style="font-size:36px">Tham Gia Đấu Trường</h1>
+    <p class="banner-sub"><span class="gr">Εἴσοδος</span> · Lối vào đền</p>
     <div class="panel">
-      <label>Tên của bạn</label>
-      <input id="name" maxlength="16" placeholder="Nhập tên...">
+      <label>Tên học giả</label>
+      <input id="name" maxlength="16" placeholder="Nhập tên của bạn...">
 
-      <label>Chọn đội</label>
+      <label>Chọn phe phái</label>
       <div id="team-pick" class="team-pick"></div>
 
-      <label>Chọn nhân vật (~50)</label>
+      <div class="greek-divider"></div>
+
+      <label>Chọn nhân vật</label>
       <div id="char-grid" class="char-grid"></div>
 
-      <button id="join-btn" class="gold" style="width:100%;margin-top:18px">VÀO SẢNH CHỜ 🚪</button>
+      <button id="join-btn" class="gold" style="width:100%;margin-top:22px;padding:16px;font-size:14px">Bước vào sảnh chờ 🏛️</button>
     </div>
   </div>
 
   <!-- B2: Sảnh chờ + game -->
   <div id="game-screen" class="container hidden">
     <div class="row" style="justify-content:space-between;align-items:center">
-      <h2 id="status-label">SẢNH CHỜ</h2>
-      <div id="me-info" style="font-size:9px"></div>
+      <h2 id="status-label" style="margin:0">Sảnh chờ</h2>
+      <div id="me-info" style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:.08em;text-transform:uppercase"></div>
     </div>
 
     <!-- Thanh máu 5 đội (hiển thị cả ở sảnh chờ và trong game) -->
@@ -43,20 +46,21 @@
         <span class="timer" id="q-timer">--</span>
       </div>
       <div class="timer-bar"><div class="timer-fill" id="q-timer-fill" style="width:100%"></div></div>
-      <p id="q-text" style="margin:14px 0"></p>
+      <p id="q-text" style="margin:14px 0;font-style:italic;font-size:18px;color:var(--ink)"></p>
       <div class="answers" id="q-answers"></div>
-      <p id="q-wait" class="center hidden" style="margin-top:14px;color:var(--accent2)">Đã ghi nhận! Chờ kết quả...</p>
+      <p id="q-wait" class="center hidden" style="margin-top:14px;color:var(--gold-dark);font-style:italic">Đã ghi nhận — chờ phán quyết...</p>
     </div>
 
     <!-- Khu vực tấn công -->
     <div id="attack-box" class="panel hidden" style="margin-top:16px">
-      <h3>🔥 Đội bạn THẮNG lượt! Chọn đội để tấn công:</h3>
-      <div class="row" id="attack-targets"></div>
+      <h3>🔥 Phe bạn chiến thắng! Hãy chọn phe để tấn công:</h3>
+      <div class="greek-divider"></div>
+      <div class="row" id="attack-targets" style="margin-top:14px"></div>
     </div>
 
     <!-- Thông báo xem -->
     <div id="spectate-box" class="panel hidden center" style="margin-top:16px">
-      <p id="spectate-msg">Bạn đang xem vòng này. Cố lên! 👀</p>
+      <p id="spectate-msg" style="font-style:italic;color:var(--ink-soft)">Bạn đang quan sát vòng này — hãy cổ vũ phe mình! 👀</p>
     </div>
   </div>
 

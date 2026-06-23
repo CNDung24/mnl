@@ -71,15 +71,17 @@ function renderCurrentQuestion() {
     document.getElementById('cur-q-text').textContent = state.question.text;
     const wrap = document.getElementById('cur-options');
     wrap.innerHTML = '';
-    const letters = ['A','B','C','D'];
+    const letters = ['Α','Β','Γ','Δ'];
+    const latin  = ['A','B','C','D'];
     state.question.options.forEach((opt, i) => {
       const b = document.createElement('button');
-      b.textContent = letters[i] + '. ' + opt;
+      b.className = 'ans-btn ans-' + latin[i];
+      b.setAttribute('data-gr', letters[i]);
+      b.innerHTML = `<span class="ans-text">${escapeHtml(opt)}</span>`;
       b.onclick = () => {
         selectedCorrect = i;
-        [...wrap.children].forEach(c => c.classList.remove('picked'));
+        [...wrap.children].forEach(c => { c.classList.remove('picked'); c.style.outline = ''; });
         b.classList.add('picked');
-        b.style.outline = '4px solid #2ecc71';
       };
       wrap.appendChild(b);
     });
@@ -125,21 +127,20 @@ function renderEditor() {
   el.innerHTML = '';
   questions.forEach((q, idx) => {
     const d = document.createElement('div');
-    d.className = 'panel';
-    d.style.background = '#1a1640';
-    const letters = ['A','B','C','D'];
+    d.className = 'panel q-editor-card';
+    const letters = ['Α','Β','Γ','Δ'];
     d.innerHTML = `
       <label>Câu ${idx + 1}</label>
       <input data-i="${idx}" data-f="text" value="${escapeHtml(q.text)}">
       ${[0,1,2,3].map(i => `
-        <div class="row" style="align-items:center;margin-top:6px">
-          <span style="width:20px">${letters[i]}</span>
-          <input style="flex:1" data-i="${idx}" data-f="opt" data-oi="${i}" value="${escapeHtml(q.options[i] || '')}">
-          <label style="margin:0;display:flex;gap:4px;align-items:center;width:auto">
-            <input type="radio" style="width:auto" name="correct-${idx}" data-i="${idx}" data-f="correct" data-oi="${i}" ${q.correct === i ? 'checked' : ''}> đúng
+        <div class="row q-editor-opt">
+          <span class="opt-letter">${letters[i]}</span>
+          <input class="opt-input" data-i="${idx}" data-f="opt" data-oi="${i}" value="${escapeHtml(q.options[i] || '')}">
+          <label class="opt-correct">
+            <input type="radio" name="correct-${idx}" data-i="${idx}" data-f="correct" data-oi="${i}" ${q.correct === i ? 'checked' : ''}> đúng
           </label>
         </div>`).join('')}
-      <button class="danger" data-del="${idx}" style="margin-top:8px">🗑️ Xóa</button>
+      <button class="danger q-editor-del" data-del="${idx}">🗑️ Xóa</button>
     `;
     el.appendChild(d);
   });
@@ -194,7 +195,8 @@ function parseQuestionsJson(raw) {
 function setImportStatus(msg, isError) {
   const el = document.getElementById('import-status');
   el.textContent = msg;
-  el.style.color = isError ? '#e74c3c' : 'var(--accent2)';
+  el.style.color = isError ? 'var(--krater-red)' : 'var(--gold-dark)';
+  el.style.fontStyle = 'normal';
 }
 
 function saveQuestionsAfterImport() {

@@ -6,20 +6,15 @@
   <title>Máy chiếu - Triết Học Arena</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    body { font-size: 14px; }
-    .proj-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
-    .teams-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 20px; }
-    .big-q { font-size: 20px; min-height: 80px; }
-    .proj-timer { font-size: 60px; }
-    .vs-chosen { display:grid; grid-template-columns: repeat(5,1fr); gap:10px; text-align:center; }
-    .chosen-card { padding:12px; border:2px solid var(--border); background:#1a1640; }
-    .lb-row { display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid var(--border); }
-    @media (max-width:900px){ .proj-grid{grid-template-columns:1fr} }
+    /* Projector chỉnh nhỏ - phần lớn dùng style.css */
+    body { font-size: 16px; }
+    body.projector .panel { color: var(--text-on-marble); }
   </style>
 </head>
-<body>
-  <div class="container" style="max-width:1400px">
-    <h1 class="center">⚔️ TRIẾT HỌC ARENA ⚔️</h1>
+<body class="projector">
+  <div class="container wide">
+    <h1 class="banner-title">Triết Học Arena</h1>
+    <p class="banner-sub">⚔ Đấu trường trí tuệ · Năm phe phái ⚔</p>
 
     <!-- Thanh HP 5 đội -->
     <div class="teams-row" id="teams-row"></div>
