@@ -291,7 +291,10 @@ function updatePhaseUI() {
       fitCanvas();
     }
     // Ở sảnh chờ → hiện joystick để di chuyển (chỉ thiết bị cảm ứng)
-    if (joystick) joystick.classList.remove('hidden');
+    if (joystick) {
+      if (isTouchDevice) joystick.classList.remove('hidden');
+      else joystick.classList.add('hidden');
+    }
   } else if (state.phase === 'question') {
     label.textContent = '⚔ VÒNG ' + state.round + ' — TRẢ LỜI CÂU HỎI';
     if (canvas) canvas.classList.add('hidden');
@@ -566,9 +569,9 @@ function drawPlayer(p) {
 }
 
 // ---------- Joystick ----------
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 function setupJoystick() {
-  const isTouch = 'ontouchstart' in window;
-  if (!isTouch) return;
+  if (!isTouchDevice) return;
   const js = document.getElementById('joystick');
   js.classList.remove('hidden');
   const stick = js.querySelector('.stick');
