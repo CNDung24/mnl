@@ -20,7 +20,8 @@ const WORLD_H = config.WORLD_H;
 class GameEngine {
   constructor() {
     this.characters = characters;
-    this.reset(true);
+    this.players = new Map();
+    this.reset(true, false);
   }
 
   characterById(id) {
@@ -35,10 +36,16 @@ class GameEngine {
     return Math.max(8, ch.fw / 2);
   }
 
-  reset(keepQuestions = false) {
+  // keepPlayers = true: giữ nguyên người chơi đang online (chỉ reset điểm),
+  // không bắt họ rời sảnh chờ / vào lại từ đầu.
+  reset(keepQuestions = false, keepPlayers = true) {
     this.phase = 'lobby';
     this.round = 0;
-    this.players = new Map();   // socketId -> player
+    if (keepPlayers) {
+      this.players.forEach(p => { p.score = 0; });
+    } else {
+      this.players = new Map();   // socketId -> player
+    }
     this.teams = config.TEAMS.map(t => ({
       ...t,
       hp: config.START_HP,
@@ -64,6 +71,9 @@ class GameEngine {
   addPlayer(socketId, { name, teamId }) {
     const team = this.team(Number(teamId));
     if (!team) return { error: 'Đội không hợp lệ' };
+    if (this.getPlayersByTeam(team.id).length >= config.MAX_PLAYERS_PER_TEAM) {
+      return { error: 'Đội đã đủ người, hãy chọn đội khác' };
+    }
     const margin = 50;
     const player = {
       id: socketId,

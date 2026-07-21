@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +8,16 @@
   <link rel="stylesheet" href="/css/style.css">
   <style>
     /* Projector chỉnh nhỏ - phần lớn dùng style.css */
-    body { font-size: 16px; }
-    body.projector .panel { color: var(--text-on-marble); }
+    body {
+      font-size: 16px;
+    }
+
+    body.projector .panel {
+      color: var(--text-on-marble);
+    }
   </style>
 </head>
+
 <body class="projector">
   <div class="container wide">
     <h1 class="banner-title">Triết Học Arena</h1>
@@ -19,42 +26,50 @@
     <!-- Thanh HP 5 đội -->
     <div class="teams-row" id="teams-row"></div>
 
-    <div class="proj-grid">
-      <div>
-        <!-- Người đang thi đấu -->
-        <div class="panel">
-          <h2 id="round-title">Chờ bắt đầu...</h2>
-          <div class="vs-chosen" id="chosen"></div>
-        </div>
+    <!-- Câu hỏi -->
+    <div class="panel" id="q-panel">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2>Câu hỏi</h2>
+        <div class="proj-timer" id="timer">--</div>
+      </div>
+      <div class="timer-bar">
+        <div class="timer-fill" id="timer-fill"></div>
+      </div>
+      <p class="big-q" id="q-text" style="margin-top:16px">---</p>
+      <div class="answers" id="q-options"></div>
+    </div>
+  </div>
 
-        <!-- Câu hỏi -->
-        <div class="panel" id="q-panel">
-          <div class="row" style="justify-content:space-between;align-items:center">
-            <h2>Câu hỏi</h2>
-            <div class="proj-timer" id="timer">--</div>
+  <!-- Overlay công bố đội thắng vòng + cảnh giao chiến (giống màn hình người chơi) -->
+  <div id="winner-overlay" class="winner-overlay hidden">
+    <div id="winner-card" class="winner-card">
+      <div id="winner-badge" class="winner-badge">🏆 CHIẾN THẮNG 🏆</div>
+      <div id="winner-char" class="winner-char"></div>
+      <div id="winner-team" class="winner-team"></div>
+      <div id="winner-time" class="winner-time"></div>
+
+      <!-- Cảnh giao chiến: nhân vật đội thắng tung chiêu vào nhân vật đội bị chọn -->
+      <div id="winner-battle" class="winner-battle hidden">
+        <div class="winner-battle-row">
+          <div class="battle-side">
+            <div id="battle-attacker" class="battle-char"></div>
+            <div id="battle-attacker-name" class="battle-name"></div>
           </div>
-          <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
-          <p class="big-q" id="q-text" style="margin-top:16px">---</p>
-          <div class="answers" id="q-options"></div>
+          <div id="battle-impact" class="battle-impact">💥</div>
+          <div class="battle-side">
+            <div id="battle-target" class="battle-char"></div>
+            <div id="battle-target-name" class="battle-name"></div>
+          </div>
         </div>
-
-        <!-- Thông báo tấn công -->
-        <div class="panel hidden center" id="attack-panel">
-          <h2 id="attack-text"></h2>
-        </div>
+        <p id="battle-result" class="battle-result"></p>
       </div>
 
-      <!-- Bảng xếp hạng cá nhân -->
-      <div>
-        <div class="panel">
-          <h2>🏆 BXH cá nhân</h2>
-          <div id="leaderboard"></div>
-        </div>
-      </div>
+      <p id="winner-wait-msg" class="winner-wait-msg hidden"></p>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/projector.js"></script>
 </body>
+
 </html>

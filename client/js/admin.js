@@ -4,12 +4,27 @@ let TEAMS = [];
 let state = null;
 let questions = [];
 let selectedCorrect = null;
+let paused = false;
 
 socket.on('init', (data) => {
   TEAMS = data.teams;
   state = data.state;
+  paused = !!data.paused;
+  updatePauseBtn();
   renderHP();
 });
+
+socket.on('game-paused', (data) => {
+  paused = !!(data && data.paused);
+  updatePauseBtn();
+});
+
+function updatePauseBtn() {
+  const b = document.getElementById('btn-pause');
+  if (!b) return;
+  b.textContent = paused ? '▶️ Tiếp tục' : '⏸️ Tạm dừng';
+  b.classList.toggle('gold', paused);
+}
 
 // ---------- Đăng nhập ----------
 document.getElementById('login-btn').onclick = login;
@@ -34,9 +49,17 @@ document.getElementById('btn-start').onclick = () => {
     if (!res.ok) alert(res.error || 'Lỗi');
   });
 };
-document.getElementById('btn-next').onclick = () => socket.emit('admin:next', {}, () => {});
+document.getElementById('btn-pause').onclick = () => {
+  socket.emit('admin:toggle-pause', {}, (res) => {
+    if (!res || !res.ok) return alert((res && res.error) || 'Lỗi');
+    paused = res.paused;
+    updatePauseBtn();
+  });
+};
 document.getElementById('btn-reset').onclick = () => {
-  if (confirm('Reset toàn bộ trận?')) socket.emit('admin:reset', {}, () => {});
+  if (confirm('Reset lại trận đấu? Người chơi vẫn giữ nguyên trong sảnh, chỉ HP/điểm/vòng đấu về lại ban đầu.')) {
+    socket.emit('admin:reset', {}, () => {});
+  }
 };
 document.getElementById('btn-reveal').onclick = () => {
   socket.emit('admin:reveal', { correct: selectedCorrect }, () => {});

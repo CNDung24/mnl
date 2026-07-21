@@ -120,14 +120,34 @@ function renderTeamPick() {
   TEAMS.forEach(t => {
     const d = document.createElement('div');
     d.className = 'tp team-' + t.id;
+    d.dataset.team = t.id;
     d.textContent = t.name;
     d.style.borderColor = t.color;
     d.onclick = () => {
+      if (d.classList.contains('full')) return toast('Đội đã đủ người, hãy chọn đội khác!');
       selectedTeam = t.id;
       [...el.children].forEach(c => c.classList.remove('sel'));
       d.classList.add('sel');
     };
     el.appendChild(d);
+  });
+  updateTeamPickAvailability();
+}
+
+// Đánh dấu đội đã đủ người (dựa trên state realtime) để người chơi không chọn nhầm
+function updateTeamPickAvailability() {
+  if (!state) return;
+  const el = document.getElementById('team-pick');
+  if (!el) return;
+  [...el.children].forEach(d => {
+    const teamId = Number(d.dataset.team);
+    const t = state.teams.find(x => x.id === teamId);
+    const full = !!(t && t.players >= 1);
+    d.classList.toggle('full', full);
+    if (full && selectedTeam === teamId) {
+      selectedTeam = null;
+      d.classList.remove('sel');
+    }
   });
 }
 
@@ -200,11 +220,15 @@ socket.on('state', (s) => {
   state.players.forEach(p => { if (typeof p.facing !== 'number') p.facing = 1; });
   renderTeamHP();
   updatePhaseUI();
+  if (!me) updateTeamPickAvailability();
 });
 
 socket.on('your-turn', (data) => {
-  // chỉ hiện câu hỏi mới khi round thực sự đổi
-  if (state && state.round !== lastShownRound) {
+  // chỉ hiện câu hỏi mới khi round thực sự đổi VÀ đội mình còn sống
+  if (!state || !me) return;
+  const myTeam = state.teams.find(t => t.id === me.teamId);
+  if (!myTeam || !myTeam.alive) return;
+  if (state.round !== lastShownRound) {
     showQuestion(data.question);
   }
 });
@@ -364,11 +388,21 @@ function showAttackBattle(attackerTeamId, targetTeamId, eliminated) {
   targetEl.classList.remove('hit-flash', 'eliminated');
 
   // Người tấn công đứng bên trái, quay mặt sang phải (về phía mục tiêu).
-  const FRAME_MS = 100;
-  let attackDurationMs = 700;
+  const FRAME_MS = 140; // chậm lại một ít cho dễ xem (trước là 100ms/frame)
+  let attackDurationMs = 1000;
   if (attackerCh && attackerCh.attackImage) {
     attackDurationMs = attackerCh.attackFrames * FRAME_MS;
     attackerEl.innerHTML = `<div class="attack-sprite" style="${facingStyle(attackerCh, 1)}background-image:url('${attackerCh.attackImage}');width:${attackerCh.attackFw * 2}px;height:${attackerCh.attackFh * 2}px;--frames:${attackerCh.attackFrames};--fw:${attackerCh.attackFw * 2}px;animation-duration:${attackDurationMs}ms"></div>`;
+    // Keyframe "to" lùi đúng hết chiều rộng sprite sheet (quá 1 frame so với frame
+    // cuối hợp lệ) — với animation loop thì không sao, nhưng animation chạy 1 lần +
+    // fill-mode:forwards này sẽ đứng yên ở vị trí "lố" đó -> nhân vật mất hình.
+    // Sửa lại đúng vị trí frame cuối ngay khi animation dừng.
+    const spriteEl = attackerEl.querySelector('.attack-sprite');
+    const lastFramePos = -(attackerCh.attackFrames - 1) * (attackerCh.attackFw * 2);
+    spriteEl.addEventListener('animationend', () => {
+      spriteEl.style.animation = 'none';
+      spriteEl.style.backgroundPosition = lastFramePos + 'px 0';
+    }, { once: true });
   } else {
     attackerEl.innerHTML = idleCharHtml(attackerCh, 2);
   }
@@ -516,12 +550,43 @@ function highlightCorrect(correct) {
   });
 }
 
+// ---------- Tạm dừng ----------
+// Khi admin tạm dừng, đồng hồ (câu hỏi/tấn công/đếm ngược vòng mới) đứng yên
+// tại đúng thời điểm tạm dừng cho tới khi admin bấm tiếp tục.
+let isPaused = false;
+let frozenTimerRemain = null;
+let frozenNextRoundRemain = null;
+socket.on('game-paused', (d) => {
+  isPaused = !!(d && d.paused);
+  if (isPaused) {
+    frozenTimerRemain = timerData ? Math.max(0, timerData.endsAt - Date.now()) : null;
+    frozenNextRoundRemain = nextRoundData ? Math.max(0, nextRoundData.endsAt - Date.now()) : null;
+  } else {
+    frozenTimerRemain = null;
+    frozenNextRoundRemain = null;
+  }
+  renderPauseBanner();
+});
+function renderPauseBanner() {
+  let el = document.getElementById('pause-banner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'pause-banner';
+    el.className = 'pause-banner hidden';
+    el.textContent = '⏸ BAN TỔ CHỨC ĐANG TẠM DỪNG TRẬN ĐẤU';
+    document.body.appendChild(el);
+  }
+  el.classList.toggle('hidden', !isPaused);
+}
+
 // ---------- Timer ----------
 let timerData = null;
 socket.on('timer', (d) => { timerData = d; });
 setInterval(() => {
   if (!timerData) return;
-  const remain = Math.max(0, timerData.endsAt - Date.now());
+  const remain = (isPaused && frozenTimerRemain !== null)
+    ? frozenTimerRemain
+    : Math.max(0, timerData.endsAt - Date.now());
   const sec = Math.ceil(remain / 1000);
   const tEl = document.getElementById('q-timer');
   if (tEl) tEl.textContent = sec;
@@ -540,7 +605,10 @@ function renderNextRoundBanner() {
   if (!el) return;
   if (!nextRoundData) { el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  const sec = Math.max(0, Math.ceil((nextRoundData.endsAt - Date.now()) / 1000));
+  const remainMs = (isPaused && frozenNextRoundRemain !== null)
+    ? frozenNextRoundRemain
+    : Math.max(0, nextRoundData.endsAt - Date.now());
+  const sec = Math.max(0, Math.ceil(remainMs / 1000));
   document.getElementById('next-round-text').innerHTML =
     `⏳ Vòng tiếp theo bắt đầu sau <b>${sec}s</b>…`;
 }
@@ -667,6 +735,7 @@ function worldToCanvasY(wy) { return wy * (canvas.height / WORLD_H); }
 function drawPlayer(p) {
   const ch = charMap[p.characterId] || { emoji: '❓', color: '#fff' };
   const px = worldToCanvasX(p.x), py = worldToCanvasY(p.y);
+  let topY;
   // nhân vật: sprite (nếu có _img đã load) hoặc fallback emoji
   if (ch._img && ch._img.complete && ch.fw) {
     const frame = isMoving(p) ? currentFrame(ch.frames) : 0;
@@ -684,6 +753,7 @@ function drawPlayer(p) {
     } else {
       ctx.drawImage(ch._img, frame * ch.fw, 0, ch.fw, ch.fh, px - dw / 2, py - dh / 2 + 3, dw, dh);
     }
+    topY = py - dh / 2 + 3;
   } else {
     ctx.font = '20px serif';
     ctx.textAlign = 'center';
@@ -691,7 +761,24 @@ function drawPlayer(p) {
     if ((p.facing || 1) < 0) { ctx.save(); ctx.translate(px, 0); ctx.scale(-1, 1); }
     ctx.fillText(ch.emoji, 0, py + 1);
     if ((p.facing || 1) < 0) ctx.restore();
+    topY = py - 12;
   }
+  drawNameTag(p, px, topY);
+}
+
+// Tên người chơi hiện phía trên đầu nhân vật (viền tối để dễ đọc trên mọi nền)
+function drawNameTag(p, px, topY) {
+  if (!p.name) return;
+  const t = TEAMS.find(x => x.id === p.teamId);
+  const y = topY - 4;
+  ctx.font = "bold 12px 'Cinzel', Georgia, serif";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(10,7,22,0.9)';
+  ctx.fillStyle = (t && t.color) || '#f0e3c1';
+  ctx.strokeText(p.name, px, y);
+  ctx.fillText(p.name, px, y);
 }
 
 // ---------- Joystick ----------

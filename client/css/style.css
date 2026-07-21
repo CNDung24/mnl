@@ -320,6 +320,20 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
   transform: scale(1.05);
 }
 .team-pick .tp.sel::before { color: var(--bg-deep); }
+.team-pick .tp.full {
+  opacity: 0.4;
+  filter: grayscale(0.8);
+  cursor: not-allowed;
+}
+.team-pick .tp.full::after {
+  content: 'Đã đủ người';
+  display: block;
+  margin-top: 4px;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--krater-red);
+}
+.team-pick .tp.full:hover { transform: none; box-shadow: none; }
 
 /* ====================================================================
    Reactions (emoji bay) — khay vàng
@@ -937,7 +951,6 @@ th {
 /* ====================================================================
    Projector (riêng cho màn hình lớn)
    ==================================================================== */
-.proj-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
 .teams-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -960,30 +973,27 @@ th {
     0 0 16px rgba(139, 26, 26, 0.7),
     3px 3px 0 #000;
 }
-.vs-chosen {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+
+/* ====================================================================
+   Pause banner (admin tạm dừng trận đấu)
+   ==================================================================== */
+.pause-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 90;
   text-align: center;
+  padding: 14px 20px;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.14em;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--marble-light);
+  background: linear-gradient(180deg, var(--krater-red), #5a1010);
+  border-bottom: 3px double var(--gold);
+  box-shadow: 0 4px 18px rgba(0,0,0,.6);
+  animation: countdown-pulse 1s ease-in-out infinite;
 }
-.chosen-card {
-  padding: 16px 12px;
-  border: 2px solid var(--gold);
-  border-top: 3px double var(--gold);
-  background:
-    radial-gradient(ellipse at top, rgba(255,255,255,.5), transparent 60%),
-    var(--marble);
-  color: var(--ink);
-  box-shadow: 0 6px 14px rgba(0,0,0,.3);
-}
-.lb-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 4px;
-  border-bottom: 1px solid var(--gold-dark);
-  font-size: 13px;
-}
-@media (max-width: 900px) { .proj-grid { grid-template-columns: 1fr; } }
 
 /* ====================================================================
    Next-round countdown banner (hiện giữa các vòng)
