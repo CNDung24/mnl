@@ -18,7 +18,8 @@
       "Bash(powershell -NoProfile -Command \"Get-NetTCPConnection -LocalPort 3000 -State Listen | Select-Object -ExpandProperty OwningProcess\")",
       "Bash(netstat -ano)",
       "Bash(powershell -NoProfile -Command \"Get-Process -Id 9244 | Select-Object Id,ProcessName,Path\")",
-      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 14768 -Force -ErrorAction SilentlyContinue\")"
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 14768 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -NoProfile -Command \"Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess\" 2>/dev/null)"
     ]
   }
 }

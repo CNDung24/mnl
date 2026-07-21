@@ -83,6 +83,23 @@
         <p class="winner-attack-label">🔥 Chọn phe để tấn công:</p>
         <div class="row" id="winner-attack-targets" style="justify-content:center"></div>
       </div>
+
+      <!-- Cảnh giao chiến: nhân vật đội thắng tung chiêu vào nhân vật đội bị chọn -->
+      <div id="winner-battle" class="winner-battle hidden">
+        <div class="winner-battle-row">
+          <div class="battle-side">
+            <div id="battle-attacker" class="battle-char"></div>
+            <div id="battle-attacker-name" class="battle-name"></div>
+          </div>
+          <div id="battle-impact" class="battle-impact">💥</div>
+          <div class="battle-side">
+            <div id="battle-target" class="battle-char"></div>
+            <div id="battle-target-name" class="battle-name"></div>
+          </div>
+        </div>
+        <p id="battle-result" class="battle-result"></p>
+      </div>
+
       <p id="winner-wait-msg" class="winner-wait-msg hidden"></p>
     </div>
   </div>

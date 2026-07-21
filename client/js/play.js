@@ -14,13 +14,18 @@ let charMap = {};              // id -> character
 let WORLD_W = 1600;
 let WORLD_H = 900;
 
-// Preload sprite sheet cho mỗi nhân vật (nếu có image).
+// Preload sprite sheet cho mỗi nhân vật (nếu có image) — cả sprite đi bộ và tấn công.
 function preloadSprites() {
   CHARACTERS.forEach(c => {
     if (c.image) {
       const img = new Image();
       img.src = c.image;
       c._img = img;
+    }
+    if (c.attackImage) {
+      const img = new Image();
+      img.src = c.attackImage;
+      c._attackImg = img;
     }
   });
 }
@@ -239,6 +244,7 @@ function showWinnerOverlay(winnerTeamId, timeMs) {
     : '';
   document.getElementById('winner-attack-section').classList.add('hidden');
   document.getElementById('winner-wait-msg').classList.add('hidden');
+  document.getElementById('winner-battle').classList.add('hidden');
 
   clearTimeout(winnerOverlayTimeout);
   overlay.classList.remove('hidden');
@@ -260,6 +266,7 @@ function showNoWinnerOverlay() {
   teamEl.textContent = '';
   timeEl.textContent = '';
   document.getElementById('winner-attack-section').classList.add('hidden');
+  document.getElementById('winner-battle').classList.add('hidden');
   waitMsg.textContent = 'Tất cả các đội đều bị trừ 1 HP.';
   waitMsg.classList.remove('hidden');
 
@@ -269,7 +276,9 @@ function showNoWinnerOverlay() {
 }
 
 // Đội thắng thấy nút chọn mục tiêu ngay trong overlay; các đội khác chỉ thấy dòng chờ.
+let pendingAttackerTeamId = null;
 socket.on('attack-phase', (data) => {
+  pendingAttackerTeamId = data.attackerTeam;
   const overlay = document.getElementById('winner-overlay');
   if (overlay.classList.contains('hidden')) return; // an toàn (luôn có 'reveal' trước 'attack-phase')
   const attackSection = document.getElementById('winner-attack-section');
@@ -304,14 +313,92 @@ socket.on('attack-phase', (data) => {
 socket.on('attacked', (data) => {
   const overlay = document.getElementById('winner-overlay');
   if (overlay.classList.contains('hidden')) return;
-  document.getElementById('winner-attack-section').classList.add('hidden');
-  const waitMsg = document.getElementById('winner-wait-msg');
-  waitMsg.classList.remove('hidden');
-  const t = TEAMS.find(x => x.id === data.targetTeamId);
-  waitMsg.textContent = `💥 ${t ? t.name : ''} bị tấn công! -1 HP` + (data.eliminated ? ' ☠️ BỊ LOẠI!' : '');
-  clearTimeout(winnerOverlayTimeout);
-  winnerOverlayTimeout = setTimeout(() => overlay.classList.add('hidden'), 2500);
+  const attackerTeamId = (typeof data.attackerTeamId === 'number') ? data.attackerTeamId : pendingAttackerTeamId;
+  showAttackBattle(attackerTeamId, data.targetTeamId, data.eliminated);
 });
+
+// Dựng lại 1 sprite nhân vật (idle, lặp) thành chuỗi HTML để nhét vào ô hiển thị.
+function idleCharHtml(ch, scale) {
+  if (ch && ch.image) {
+    return `<div class="big-sprite idle" style="background-image:url('${ch.image}');width:${ch.fw * scale}px;height:${ch.fh * scale}px;--frames:${ch.frames};--fw:${ch.fw * scale}px"></div>`;
+  }
+  return `<div class="big-emoji">${ch ? ch.emoji : '👤'}</div>`;
+}
+
+// Lật ngang sprite nếu hướng mong muốn khác hướng gốc của ảnh (baseFacing).
+function facingStyle(ch, desiredFacing) {
+  const base = (ch && ch.baseFacing) || 1;
+  return (desiredFacing !== base) ? 'transform:scaleX(-1);' : '';
+}
+
+// Cảnh giao chiến: nhân vật đội thắng tung chiêu (sprite tấn công, chạy 1 lần)
+// vào nhân vật đội bị chọn (đứng yên, rung + chớp đỏ đúng lúc "trúng đòn").
+function showAttackBattle(attackerTeamId, targetTeamId, eliminated) {
+  const at = TEAMS.find(x => x.id === attackerTeamId);
+  const tt = TEAMS.find(x => x.id === targetTeamId);
+  if (!at || !tt) return;
+  const attackerCh = charMap[at.characterId];
+  const targetCh = charMap[tt.characterId];
+
+  document.getElementById('winner-badge').textContent = '⚔️ TẤN CÔNG!';
+  document.getElementById('winner-char').innerHTML = '';
+  document.getElementById('winner-team').textContent = '';
+  document.getElementById('winner-time').textContent = '';
+  document.getElementById('winner-attack-section').classList.add('hidden');
+  document.getElementById('winner-wait-msg').classList.add('hidden');
+  document.getElementById('winner-card').style.setProperty('--wt-color', at.color);
+
+  const overlay = document.getElementById('winner-overlay');
+  const battle = document.getElementById('winner-battle');
+  const attackerEl = document.getElementById('battle-attacker');
+  const targetEl = document.getElementById('battle-target');
+  const impactEl = document.getElementById('battle-impact');
+  const resultEl = document.getElementById('battle-result');
+
+  document.getElementById('battle-attacker-name').textContent = at.name;
+  document.getElementById('battle-attacker-name').style.color = at.color;
+  document.getElementById('battle-target-name').textContent = tt.name;
+  document.getElementById('battle-target-name').style.color = tt.color;
+  resultEl.textContent = '';
+  impactEl.classList.remove('pop');
+  targetEl.classList.remove('hit-flash', 'eliminated');
+
+  // Người tấn công đứng bên trái, quay mặt sang phải (về phía mục tiêu).
+  const FRAME_MS = 100;
+  let attackDurationMs = 700;
+  if (attackerCh && attackerCh.attackImage) {
+    attackDurationMs = attackerCh.attackFrames * FRAME_MS;
+    attackerEl.innerHTML = `<div class="attack-sprite" style="${facingStyle(attackerCh, 1)}background-image:url('${attackerCh.attackImage}');width:${attackerCh.attackFw * 2}px;height:${attackerCh.attackFh * 2}px;--frames:${attackerCh.attackFrames};--fw:${attackerCh.attackFw * 2}px;animation-duration:${attackDurationMs}ms"></div>`;
+  } else {
+    attackerEl.innerHTML = idleCharHtml(attackerCh, 2);
+  }
+  // Mục tiêu đứng bên phải, quay mặt sang trái (về phía người tấn công).
+  targetEl.innerHTML = idleCharHtml(targetCh, 2);
+  const targetSprite = targetEl.querySelector('.big-sprite');
+  if (targetSprite) targetSprite.style.cssText += facingStyle(targetCh, -1);
+
+  battle.classList.remove('hidden');
+
+  // Đúng lúc đòn đánh "chạm" mục tiêu (~70% animation): nổ + rung + chớp đỏ
+  const impactAt = Math.round(attackDurationMs * 0.7);
+  setTimeout(() => {
+    impactEl.classList.add('pop');
+    targetEl.classList.add('hit-flash');
+  }, impactAt);
+
+  // Sau khi đòn đánh xong: hiện kết quả -1 HP (+ mờ dần/đổ xám nếu bị loại)
+  setTimeout(() => {
+    resultEl.textContent = `−1 HP ${tt.name}` + (eliminated ? ' ☠️ BỊ LOẠI!' : '');
+    if (eliminated) {
+      targetEl.classList.remove('hit-flash');
+      targetEl.classList.add('eliminated');
+    }
+  }, attackDurationMs + 500);
+
+  // Toàn bộ overlay tự ẩn sau khi xem xong kết quả
+  clearTimeout(winnerOverlayTimeout);
+  winnerOverlayTimeout = setTimeout(() => overlay.classList.add('hidden'), attackDurationMs + 2200);
+}
 
 socket.on('match-finished', (data) => {
   const t = TEAMS.find(x => x.id === data.winnerTeamId);

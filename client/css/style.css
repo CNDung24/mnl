@@ -466,6 +466,81 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
   color: var(--ink-soft);
 }
 
+/* ---- Cảnh giao chiến trong overlay (đội thắng tung chiêu) ---- */
+.winner-battle { margin-top: 4px; }
+.winner-battle-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  min-height: 74px;
+}
+.battle-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 96px;
+}
+.battle-char {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 68px;
+}
+.battle-char .big-sprite, .battle-char .attack-sprite, .battle-char .big-emoji { margin: 0 auto; }
+.battle-name {
+  margin-top: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.battle-impact {
+  font-size: 28px;
+  opacity: 0;
+  transform: scale(0.4);
+  margin-bottom: 20px;
+}
+.battle-impact.pop { animation: battle-impact-pop 0.45s ease-out; }
+@keyframes battle-impact-pop {
+  0%   { opacity: 0; transform: scale(0.3); }
+  40%  { opacity: 1; transform: scale(1.4); }
+  100% { opacity: 0; transform: scale(1); }
+}
+.battle-result {
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--krater-red);
+  min-height: 1.2em;
+}
+/* Sprite hoạt ảnh chạy 1 lần (không lặp), dùng cho pha tấn công */
+.attack-sprite {
+  display: block;
+  background-repeat: no-repeat;
+  background-size: calc(var(--fw) * var(--frames)) 100%;
+  image-rendering: pixelated;
+  animation-name: char-play;
+  animation-timing-function: steps(var(--frames));
+  animation-fill-mode: forwards;
+  animation-iteration-count: 1;
+}
+.hit-flash { animation: hit-flash-anim 0.45s ease-out; }
+@keyframes hit-flash-anim {
+  0%   { transform: translateX(0);     filter: brightness(1); }
+  15%  { transform: translateX(-8px);  filter: brightness(2.4); }
+  30%  { transform: translateX(7px);   filter: brightness(1.6); }
+  45%  { transform: translateX(-5px);  filter: brightness(1.2); }
+  60%  { transform: translateX(3px); }
+  100% { transform: translateX(0);     filter: brightness(1); }
+}
+.eliminated { animation: battle-eliminated-fade 1s ease-out forwards; }
+@keyframes battle-eliminated-fade {
+  0%   { filter: grayscale(0) brightness(1); opacity: 1; }
+  100% { filter: grayscale(1) brightness(.6); opacity: .35; }
+}
+
 /* ====================================================================
    Lobby canvas — Quảng trường Athens với cột mờ ở hai bên
    ==================================================================== */

@@ -24,9 +24,20 @@ const CUSTOM_SPRITES = {
   char_55: { image: 'img/characters/char_55.png', frames: 9, fw: 64, fh: 64, baseFacing: -1 }
 };
 
+// Sprite hoạt ảnh "tấn công" (dùng khi đội thắng vòng tung chiêu vào đội bị chọn).
+// Cùng khung 64x64, baseFacing giống sprite đi bộ ở trên.
+const ATTACK_SPRITES = {
+  char_51: { image: 'img/characters/char_51_attack.png', frames: 7, fw: 64, fh: 64 },
+  char_52: { image: 'img/characters/char_52_attack.png', frames: 7, fw: 64, fh: 64 },
+  char_53: { image: 'img/characters/char_53_attack.png', frames: 8, fw: 64, fh: 64 },
+  char_54: { image: 'img/characters/char_54_attack.png', frames: 7, fw: 64, fh: 64 },
+  char_55: { image: 'img/characters/char_55_attack.png', frames: 8, fw: 64, fh: 64 }
+};
+
 const CHARACTERS = RAW.map((c, i) => {
   const id = c[0] || ('char_' + (i + 1));
   const custom = CUSTOM_SPRITES[id];
+  const attack = ATTACK_SPRITES[id];
   return {
     id,
     name: c[1],
@@ -36,7 +47,11 @@ const CHARACTERS = RAW.map((c, i) => {
     frames: (custom && custom.frames) || 4,
     fw: (custom && custom.fw) || 32,
     fh: (custom && custom.fh) || 32,
-    baseFacing: (custom && custom.baseFacing) || 1
+    baseFacing: (custom && custom.baseFacing) || 1,
+    attackImage: attack ? attack.image : null,
+    attackFrames: attack ? attack.frames : 0,
+    attackFw: attack ? attack.fw : 0,
+    attackFh: attack ? attack.fh : 0
   };
 });
 

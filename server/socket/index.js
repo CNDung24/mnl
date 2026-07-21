@@ -111,8 +111,9 @@ function registerSockets(io, engine) {
         const targets = engine.attackableTeams();
         if (targets.length) {
           const t = targets[Math.floor(Math.random() * targets.length)];
-          const cr = engine.chooseAttack(engine.pendingAttackerTeam, t);
-          io.emit('attacked', { targetTeamId: t, eliminated: cr.eliminated, auto: true });
+          const attackerTeamId = engine.pendingAttackerTeam;
+          const cr = engine.chooseAttack(attackerTeamId, t);
+          io.emit('attacked', { attackerTeamId, targetTeamId: t, eliminated: cr.eliminated, auto: true });
         }
         broadcastState();
         // Sau khi đội thắng đã tấn công xong (hoặc bị bỏ qua do hết giờ) → đếm ngược vòng mới
@@ -182,7 +183,7 @@ function registerSockets(io, engine) {
       const r = engine.chooseAttack(p.teamId, data.targetTeamId);
       cb && cb(r);
       if (r.ok) {
-        io.emit('attacked', { targetTeamId: r.targetTeamId, eliminated: r.eliminated });
+        io.emit('attacked', { attackerTeamId: p.teamId, targetTeamId: r.targetTeamId, eliminated: r.eliminated });
         clearTimer();
         broadcastState();
         repo.updateHistoryAttack(engine.round, r.targetTeamId).catch(() => {});
