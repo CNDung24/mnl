@@ -18,11 +18,6 @@
       <label>Chọn phe phái</label>
       <div id="team-pick" class="team-pick"></div>
 
-      <div class="greek-divider"></div>
-
-      <label>Chọn nhân vật</label>
-      <div id="char-grid" class="char-grid"></div>
-
       <button id="join-btn" class="gold" style="width:100%;margin-top:22px;padding:16px;font-size:14px">Bước vào sảnh chờ 🏛️</button>
     </div>
   </div>
@@ -56,13 +51,6 @@
       <p id="q-wait" class="center hidden" style="margin-top:14px;color:var(--gold-dark);font-style:italic">Đã ghi nhận — chờ phán quyết...</p>
     </div>
 
-    <!-- Khu vực tấn công -->
-    <div id="attack-box" class="panel hidden" style="margin-top:16px">
-      <h3>🔥 Phe bạn chiến thắng! Hãy chọn phe để tấn công:</h3>
-      <div class="greek-divider"></div>
-      <div class="row" id="attack-targets" style="margin-top:14px"></div>
-    </div>
-
     <!-- Thông báo xem -->
     <div id="spectate-box" class="panel hidden center" style="margin-top:16px">
       <p id="spectate-msg" style="font-style:italic;color:var(--ink-soft)">Bạn đang quan sát vòng này — hãy cổ vũ phe mình! 👀</p>
@@ -81,6 +69,23 @@
 
   <!-- Layer chứa emoji bay lên khi người khác reaction -->
   <div id="fx-layer" class="fx-layer"></div>
+
+  <!-- Overlay công bố đội thắng vòng + chọn đội để tấn công -->
+  <div id="winner-overlay" class="winner-overlay hidden">
+    <div id="winner-card" class="winner-card">
+      <div id="winner-badge" class="winner-badge">🏆 CHIẾN THẮNG 🏆</div>
+      <div id="winner-char" class="winner-char"></div>
+      <div id="winner-team" class="winner-team"></div>
+      <div id="winner-time" class="winner-time"></div>
+
+      <div id="winner-attack-section" class="winner-attack-section hidden">
+        <div class="greek-divider"></div>
+        <p class="winner-attack-label">🔥 Chọn phe để tấn công:</p>
+        <div class="row" id="winner-attack-targets" style="justify-content:center"></div>
+      </div>
+      <p id="winner-wait-msg" class="winner-wait-msg hidden"></p>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/play.js"></script>

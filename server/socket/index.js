@@ -93,7 +93,8 @@ function registerSockets(io, engine) {
       correct: engine.currentQuestion.correct,
       results: result.results,
       damaged: result.damaged,
-      winnerTeamId: result.winnerTeamId
+      winnerTeamId: result.winnerTeamId,
+      winnerTimeMs: result.winnerTimeMs
     });
 
     repo.saveHistory(result.record).catch(() => {});
@@ -110,8 +111,8 @@ function registerSockets(io, engine) {
         const targets = engine.attackableTeams();
         if (targets.length) {
           const t = targets[Math.floor(Math.random() * targets.length)];
-          engine.chooseAttack(engine.pendingAttackerTeam, t);
-          io.emit('attacked', { targetTeamId: t, auto: true });
+          const cr = engine.chooseAttack(engine.pendingAttackerTeam, t);
+          io.emit('attacked', { targetTeamId: t, eliminated: cr.eliminated, auto: true });
         }
         broadcastState();
         // Sau khi đội thắng đã tấn công xong (hoặc bị bỏ qua do hết giờ) → đếm ngược vòng mới
@@ -129,17 +130,14 @@ function registerSockets(io, engine) {
     socket.emit('init', {
       characters,
       teams: config.TEAMS,
-      state: engine.publicState(),
-      takenCharacters: engine.takenCharacterIds()
+      world: { w: config.WORLD_W, h: config.WORLD_H },
+      state: engine.publicState()
     });
 
     // ===== NGƯỜI CHƠI =====
     socket.on('join', (data, cb) => {
-      if (!data || !data.name || !data.teamId || !data.characterId) {
+      if (!data || !data.name || !data.teamId) {
         return cb && cb({ ok: false, error: 'Thiếu thông tin' });
-      }
-      if (data.canvasW && data.canvasH) {
-        engine.setPlayerCanvas(socket.id, data.canvasW, data.canvasH);
       }
       const result = engine.addPlayer(socket.id, data);
       if (result && result.error) {
@@ -151,13 +149,6 @@ function registerSockets(io, engine) {
       broadcastState();
       // lưu người chơi vào DB, gán dbId để cập nhật điểm sau này
       repo.savePlayer(player).then(id => { if (id) player.dbId = id; }).catch(() => {});
-    });
-
-    // Cập nhật kích thước canvas (khi người chơi resize cửa sổ)
-    socket.on('canvas-size', (data) => {
-      if (data && data.canvasW && data.canvasH) {
-        engine.setPlayerCanvas(socket.id, data.canvasW, data.canvasH);
-      }
     });
 
     socket.on('move', (pos) => {

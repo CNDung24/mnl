@@ -275,82 +275,6 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .team-5 { color: var(--tyrian); }
 
 /* ====================================================================
-   Character grid (gallery triết gia)
-   ==================================================================== */
-.char-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 10px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding: 14px;
-  background:
-    repeating-linear-gradient(45deg, rgba(28,15,8,0.04) 0 2px, transparent 2px 8px),
-    rgba(28, 15, 8, 0.10);
-  border: 1px solid var(--gold-dark);
-  border-top: 3px double var(--gold);
-  border-bottom: 3px double var(--gold);
-}
-.char-cell {
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  border: 2px solid var(--bronze);
-  cursor: pointer;
-  background:
-    radial-gradient(ellipse at top left, rgba(255,255,255,.7), transparent 60%),
-    var(--marble-light);
-  color: var(--ink);
-  position: relative;
-  transition: all 0.15s;
-}
-.char-cell:hover {
-  border-color: var(--gold);
-  background:
-    radial-gradient(ellipse at top left, rgba(255,255,255,.7), transparent 60%),
-    var(--marble);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-.char-cell.sel {
-  border-color: var(--gold-bright);
-  box-shadow:
-    0 0 0 3px var(--gold-bright),
-    0 0 22px rgba(240, 209, 117, 0.55);
-  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
-  color: var(--bg-deep);
-}
-.char-cell.taken {
-  opacity: 0.35;
-  filter: grayscale(0.7);
-  cursor: not-allowed;
-  pointer-events: none;
-}
-.char-cell.taken::after {
-  content: 'ĐÃ CHỌN';
-  position: absolute;
-  top: 4px; right: 4px;
-  font-size: 8px;
-  font-family: 'Cinzel', serif;
-  color: var(--marble-light);
-  background: rgba(28, 15, 8, 0.75);
-  padding: 2px 5px;
-  border: 1px solid var(--gold-dark);
-  letter-spacing: 0.1em;
-}
-.char-cell .nm {
-  font-size: 10px;
-  margin-top: 6px;
-  font-family: 'Cinzel', serif;
-  letter-spacing: 0.05em;
-  text-align: center;
-  color: var(--ink-soft);
-}
-
-/* ====================================================================
    Team picker — khiên/áo choàng
    ==================================================================== */
 .team-pick {
@@ -450,6 +374,96 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
   0%   { transform: translate(-50%, 0)     scale(0.4); opacity: 0; }
   20%  { transform: translate(-50%, -20px) scale(1.3); opacity: 1; }
   100% { transform: translate(-50%, -140px) scale(1);   opacity: 0; }
+}
+
+/* ====================================================================
+   Overlay công bố đội thắng vòng
+   ==================================================================== */
+.winner-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 7, 22, 0.78);
+  animation: winner-fade-in 0.25s ease-out;
+}
+@keyframes winner-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.winner-card {
+  --wt-color: var(--gold);
+  text-align: center;
+  padding: 28px 32px;
+  max-width: min(440px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, var(--marble-light) 0%, var(--marble) 100%);
+  border: 2px solid var(--wt-color);
+  border-top: 4px double var(--wt-color);
+  border-bottom: 4px double var(--wt-color);
+  box-shadow: 0 0 0 4px rgba(0,0,0,.35), 0 0 40px var(--wt-color), 0 10px 30px rgba(0,0,0,.6);
+  animation: winner-pop 0.4s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes winner-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.winner-badge {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 4px 14px;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--bg-deep);
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  border: 1px solid var(--gold-dark);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+  animation: winner-badge-pulse 1.1s ease-in-out infinite;
+}
+@keyframes winner-badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+.winner-char { margin-bottom: 6px; }
+.winner-char .big-sprite, .winner-char .big-emoji { margin: 0 auto; }
+.winner-team {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--wt-color);
+  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+}
+.winner-time {
+  margin-top: 6px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.winner-attack-section { margin-top: 14px; }
+.winner-attack-label {
+  margin: 10px 0 12px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.winner-attack-section .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.winner-wait-msg {
+  margin-top: 14px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-soft);
 }
 
 /* ====================================================================
@@ -791,23 +805,14 @@ th {
 /* ====================================================================
    Sprite animation
    ==================================================================== */
-.char-sprite {
-  display: block;
-  background-repeat: no-repeat;
-  background-size: calc(var(--fw) * var(--frames)) 100%;
-  image-rendering: pixelated;
-  animation: char-play 0.8s steps(var(--frames)) infinite;
-  margin: 0 auto;
-}
 @keyframes char-play {
   from { background-position: 0 0; }
   to   { background-position: calc(var(--fw) * var(--frames) * -1) 0; }
 }
-.char-sprite.idle, .big-sprite.idle {
+.big-sprite.idle {
   animation-play-state: paused;
   background-position: 0 0;
 }
-.char-emoji { font-size: 30px; line-height: 1; }
 .big-sprite {
   display: block;
   background-repeat: no-repeat;

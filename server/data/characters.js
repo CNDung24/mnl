@@ -1,13 +1,12 @@
 // Danh sách nhân vật. Mỗi entry: [id, name, emoji]
 // id là chuỗi tùy ý (ví dụ 'char_51'). Nếu không truyền id, tự sinh 'char_<index>'.
+// Mỗi đội gắn đúng 1 nhân vật mặc định (xem TEAMS trong config.js).
 const RAW = [
   ['char_51', 'Nv1', '✨'],   // sprite 7 frame 64x64 từ client/img/avatar/nv_1.png
   ['char_52', 'Nv2', '⚡'],   // sprite 7 frame 64x64 từ client/img/avatar/nv_2.png
   ['char_53', 'Nv3', '🌸'],   // sprite 7 frame 64x64 từ client/img/avatar/nv_3.png
   ['char_54', 'Nv4', '🌟'],   // sprite 7 frame 64x64 từ client/img/avatar/nv_4.png
-  ['char_55', 'Nv5', '🔥'],   // sprite 7 frame 64x64 từ client/img/avatar/nv_5.png
-  ['char_56', 'Nv6', '🌙'],   // sprite 7 frame 64x64 từ client/img/avatar/nv_6.png
-  ['char_57', 'Nv7', '🦉']    // sprite 7 frame 64x64 từ client/img/avatar/nv_7.png
+  ['char_55', 'Nv5', '🔥']    // sprite 7 frame 64x64 từ client/img/avatar/nv_5.png
 ];
 
 const PALETTE = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#a78bfa', '#fb923c',
@@ -22,9 +21,7 @@ const CUSTOM_SPRITES = {
   char_52: { image: 'img/characters/char_52.png', frames: 7, fw: 64, fh: 64, baseFacing: -1 },
   char_53: { image: 'img/characters/char_53.png', frames: 7, fw: 64, fh: 64, baseFacing: -1 },
   char_54: { image: 'img/characters/char_54.png', frames: 9, fw: 64, fh: 64, baseFacing: -1 },
-  char_55: { image: 'img/characters/char_55.png', frames: 9, fw: 64, fh: 64, baseFacing: -1 },
-  char_56: { image: 'img/characters/char_56.png', frames: 9, fw: 64, fh: 64, baseFacing: -1 },
-  char_57: { image: 'img/characters/char_57.png', frames: 9, fw: 64, fh: 64, baseFacing: -1 }
+  char_55: { image: 'img/characters/char_55.png', frames: 9, fw: 64, fh: 64, baseFacing: -1 }
 };
 
 const CHARACTERS = RAW.map((c, i) => {

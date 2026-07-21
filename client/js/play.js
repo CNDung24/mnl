@@ -4,11 +4,15 @@ const socket = io();
 let CHARACTERS = [];
 let TEAMS = [];
 let me = null;                 // player của mình sau khi join
-let selectedChar = null;
 let selectedTeam = null;
 let state = null;              // trạng thái game mới nhất
 let charMap = {};              // id -> character
-let cellMap = {};              // characterId -> DOM cell (để cập nhật taken)
+// Kích thước "thế giới" sảnh chờ chung — mọi người chơi (mọi thiết bị) đều
+// di chuyển trong cùng không gian tọa độ này; mỗi client tự quy đổi sang
+// pixel canvas riêng của mình khi vẽ, nên vị trí luôn nhất quán dù màn hình
+// to nhỏ khác nhau. Giá trị mặc định sẽ được ghi đè bởi server ở sự kiện 'init'.
+let WORLD_W = 1600;
+let WORLD_H = 900;
 
 // Preload sprite sheet cho mỗi nhân vật (nếu có image).
 function preloadSprites() {
@@ -64,28 +68,11 @@ socket.on('init', (data) => {
   CHARACTERS = data.characters;
   TEAMS = data.teams;
   state = data.state;
+  if (data.world) { WORLD_W = data.world.w; WORLD_H = data.world.h; }
   CHARACTERS.forEach(c => charMap[c.id] = c);
   preloadSprites();
   renderTeamPick();
-  renderCharGrid();
-  applyTaken(data.takenCharacters || (state && state.takenCharacters) || []);
 });
-
-// Cập nhật trạng thái taken cho từng ô nhân vật
-function applyTaken(takenIds) {
-  const takenSet = new Set(takenIds);
-  // mẹ đang sử dụng nhân vật nào -> không khóa ô đó
-  const myChar = (me && me.characterId) ? me.characterId : null;
-  if (myChar) takenSet.delete(myChar);
-  Object.keys(cellMap).forEach(cid => {
-    const el = cellMap[cid];
-    if (!el) return;
-    if (takenSet.has(cid)) el.classList.add('taken');
-    else el.classList.remove('taken');
-  });
-  // nếu mình đang chọn nhân vật bị taken thì hủy chọn
-  if (selectedChar && takenSet.has(selectedChar)) selectedChar = null;
-}
 
 // Render thanh HP 5 đội (hiển thị cả khi đang chờ và khi đang chơi)
 function renderTeamHP() {
@@ -139,42 +126,15 @@ function renderTeamPick() {
   });
 }
 
-function renderCharGrid() {
-  const el = document.getElementById('char-grid');
-  el.innerHTML = '';
-  cellMap = {};
-  CHARACTERS.forEach(c => {
-    const d = document.createElement('div');
-    d.className = 'char-cell';
-    if (c.image) {
-      d.innerHTML = `<div class="char-sprite idle" style="background-image:url('${c.image}');width:${c.fw}px;height:${c.fh}px;--frames:${c.frames};--fw:${c.fw}px"></div><div class="nm">${c.name}</div>`;
-    } else {
-      d.innerHTML = `<div class="char-emoji">${c.emoji}</div><div class="nm">${c.name}</div>`;
-    }
-    d.onclick = () => {
-      if (d.classList.contains('taken')) return;
-      selectedChar = c.id;
-      [...el.children].forEach(x => x.classList.remove('sel'));
-      d.classList.add('sel');
-    };
-    el.appendChild(d);
-    cellMap[c.id] = d;
-  });
-}
-
 // ---------- Tham gia ----------
 document.getElementById('join-btn').onclick = () => {
   const name = document.getElementById('name').value.trim();
   if (!name) return toast('Hãy nhập tên!');
   if (!selectedTeam) return toast('Hãy chọn đội!');
-  if (!selectedChar) return toast('Hãy chọn nhân vật!');
 
   socket.emit('join', {
     name,
-    teamId: selectedTeam,
-    characterId: selectedChar,
-    canvasW: canvas.width,
-    canvasH: canvas.height
+    teamId: selectedTeam
   }, (res) => {
     if (!res.ok) return toast(res.error || 'Lỗi tham gia');
     me = res.player;
@@ -186,7 +146,6 @@ document.getElementById('join-btn').onclick = () => {
     const t = TEAMS.find(x => x.id === me.teamId);
     document.getElementById('me-info').innerHTML =
       `${charMap[me.characterId].emoji} ${me.name} <span class="team-${me.teamId}">[${t.name}]</span>`;
-    applyTaken(state && state.takenCharacters ? state.takenCharacters : []);
     document.getElementById('reaction-bar').classList.remove('hidden');
     startLobby();
   });
@@ -212,15 +171,13 @@ socket.on('reaction', (data) => {
 function spawnReaction(playerId, type) {
   const emoji = REACT_EMOJI[type] || '✨';
   if (!state) return;
-  const p = state.players.find(x => x.id === playerId);
+  const p = (playerId === socket.id && me) ? me : state.players.find(x => x.id === playerId);
   if (!p) return;
 
-  // Tính tọa độ trên màn hình từ tọa độ trong canvas
+  // Quy đổi tọa độ world -> tọa độ màn hình thật (qua canvas CSS)
   const rect = canvas.getBoundingClientRect();
-  const scaleX = rect.width / canvas.width;
-  const scaleY = rect.height / canvas.height;
-  const sx = rect.left + p.x * scaleX;
-  const sy = rect.top + (p.y - 50) * scaleY;  // bay lên trên đầu nhân vật
+  const sx = rect.left + p.x * (rect.width / WORLD_W);
+  const sy = rect.top + (p.y * (rect.height / WORLD_H) - 50);  // bay lên trên đầu nhân vật
 
   const el = document.createElement('div');
   el.className = 'fx-emoji';
@@ -236,7 +193,6 @@ socket.on('state', (s) => {
   state = s;
   // đảm bảo mỗi player có facing (1=phải, -1=trái)
   state.players.forEach(p => { if (typeof p.facing !== 'number') p.facing = 1; });
-  applyTaken(s.takenCharacters || []);
   renderTeamHP();
   updatePhaseUI();
 });
@@ -253,13 +209,109 @@ socket.on('answer-received', () => {});
 socket.on('reveal', (data) => {
   // hiện kết quả trên câu hỏi nếu đang mở
   highlightCorrect(data.correct);
+  if (data.winnerTeamId) showWinnerOverlay(data.winnerTeamId, data.winnerTimeMs);
+  else showNoWinnerOverlay();
 });
 
+// ---------- Overlay công bố đội thắng vòng + chọn tấn công ----------
+// Overlay này ở lại trên màn hình xuyên suốt reveal -> attack cho tới khi
+// có kết quả tấn công, để mọi người luôn thấy nhân vật đội thắng + trạng thái hiện tại.
+let winnerOverlayTimeout = null;
+function showWinnerOverlay(winnerTeamId, timeMs) {
+  const t = TEAMS.find(x => x.id === winnerTeamId);
+  if (!t) return;
+  const ch = charMap[t.characterId];
+  const overlay = document.getElementById('winner-overlay');
+  const card = document.getElementById('winner-card');
+  const badge = document.getElementById('winner-badge');
+  const charEl = document.getElementById('winner-char');
+  const teamEl = document.getElementById('winner-team');
+  const timeEl = document.getElementById('winner-time');
+
+  card.style.setProperty('--wt-color', t.color);
+  badge.textContent = '🏆 CHIẾN THẮNG 🏆';
+  charEl.innerHTML = (ch && ch.image)
+    ? `<div class="big-sprite idle" style="background-image:url('${ch.image}');width:${ch.fw * 2}px;height:${ch.fh * 2}px;--frames:${ch.frames};--fw:${ch.fw * 2}px"></div>`
+    : `<div class="big-emoji">${ch ? ch.emoji : '👤'}</div>`;
+  teamEl.textContent = t.name;
+  timeEl.textContent = (typeof timeMs === 'number')
+    ? 'Thời gian: ' + (timeMs / 1000).toFixed(2) + 's'
+    : '';
+  document.getElementById('winner-attack-section').classList.add('hidden');
+  document.getElementById('winner-wait-msg').classList.add('hidden');
+
+  clearTimeout(winnerOverlayTimeout);
+  overlay.classList.remove('hidden');
+}
+
+// Không đội nào trả lời đúng — báo ngắn gọn rồi tự ẩn, không có pha tấn công theo sau.
+function showNoWinnerOverlay() {
+  const overlay = document.getElementById('winner-overlay');
+  const card = document.getElementById('winner-card');
+  const badge = document.getElementById('winner-badge');
+  const charEl = document.getElementById('winner-char');
+  const teamEl = document.getElementById('winner-team');
+  const timeEl = document.getElementById('winner-time');
+  const waitMsg = document.getElementById('winner-wait-msg');
+
+  card.style.setProperty('--wt-color', 'var(--krater-red)');
+  badge.textContent = '💀 KHÔNG AI TRẢ LỜI ĐÚNG';
+  charEl.innerHTML = '';
+  teamEl.textContent = '';
+  timeEl.textContent = '';
+  document.getElementById('winner-attack-section').classList.add('hidden');
+  waitMsg.textContent = 'Tất cả các đội đều bị trừ 1 HP.';
+  waitMsg.classList.remove('hidden');
+
+  clearTimeout(winnerOverlayTimeout);
+  overlay.classList.remove('hidden');
+  winnerOverlayTimeout = setTimeout(() => overlay.classList.add('hidden'), 2500);
+}
+
+// Đội thắng thấy nút chọn mục tiêu ngay trong overlay; các đội khác chỉ thấy dòng chờ.
 socket.on('attack-phase', (data) => {
-  if (me && data.attackerTeam === me.teamId) showAttack(data.attackable);
+  const overlay = document.getElementById('winner-overlay');
+  if (overlay.classList.contains('hidden')) return; // an toàn (luôn có 'reveal' trước 'attack-phase')
+  const attackSection = document.getElementById('winner-attack-section');
+  const waitMsg = document.getElementById('winner-wait-msg');
+
+  if (me && me.teamId === data.attackerTeam) {
+    attackSection.classList.remove('hidden');
+    waitMsg.classList.add('hidden');
+    const wrap = document.getElementById('winner-attack-targets');
+    wrap.innerHTML = '';
+    data.attackable.forEach(tid => {
+      const target = TEAMS.find(x => x.id === tid);
+      const b = document.createElement('button');
+      b.className = 'danger';
+      b.textContent = '⚔️ ' + target.name;
+      b.onclick = () => {
+        [...wrap.children].forEach(x => x.disabled = true);
+        socket.emit('choose-attack', { targetTeamId: tid }, (res) => {
+          if (!res.ok) { toast(res.error || 'Lỗi'); [...wrap.children].forEach(x => x.disabled = false); }
+        });
+      };
+      wrap.appendChild(b);
+    });
+  } else {
+    attackSection.classList.add('hidden');
+    waitMsg.classList.remove('hidden');
+    const t = TEAMS.find(x => x.id === data.attackerTeam);
+    waitMsg.textContent = `⏳ ${t ? t.name : ''} đang chọn mục tiêu để tấn công...`;
+  }
 });
 
-socket.on('attacked', () => {});
+socket.on('attacked', (data) => {
+  const overlay = document.getElementById('winner-overlay');
+  if (overlay.classList.contains('hidden')) return;
+  document.getElementById('winner-attack-section').classList.add('hidden');
+  const waitMsg = document.getElementById('winner-wait-msg');
+  waitMsg.classList.remove('hidden');
+  const t = TEAMS.find(x => x.id === data.targetTeamId);
+  waitMsg.textContent = `💥 ${t ? t.name : ''} bị tấn công! -1 HP` + (data.eliminated ? ' ☠️ BỊ LOẠI!' : '');
+  clearTimeout(winnerOverlayTimeout);
+  winnerOverlayTimeout = setTimeout(() => overlay.classList.add('hidden'), 2500);
+});
 
 socket.on('match-finished', (data) => {
   const t = TEAMS.find(x => x.id === data.winnerTeamId);
@@ -271,8 +323,9 @@ socket.on('match-finished', (data) => {
 // ---------- Phase UI ----------
 function hideAll() {
   document.getElementById('question-box').classList.add('hidden');
-  document.getElementById('attack-box').classList.add('hidden');
   document.getElementById('spectate-box').classList.add('hidden');
+  document.getElementById('winner-overlay').classList.add('hidden');
+  clearTimeout(winnerOverlayTimeout);
 }
 
 function updatePhaseUI() {
@@ -376,28 +429,6 @@ function highlightCorrect(correct) {
   });
 }
 
-// ---------- Tấn công ----------
-function showAttack(targets) {
-  hideAll();
-  const box = document.getElementById('attack-box');
-  box.classList.remove('hidden');
-  const wrap = document.getElementById('attack-targets');
-  wrap.innerHTML = '';
-  targets.forEach(tid => {
-    const t = TEAMS.find(x => x.id === tid);
-    const b = document.createElement('button');
-    b.className = 'danger';
-    b.textContent = '⚔️ ' + t.name;
-    b.onclick = () => {
-      socket.emit('choose-attack', { targetTeamId: tid }, (res) => {
-        if (res.ok) box.classList.add('hidden');
-        else toast(res.error || 'Lỗi');
-      });
-    };
-    wrap.appendChild(b);
-  });
-}
-
 // ---------- Timer ----------
 let timerData = null;
 socket.on('timer', (d) => { timerData = d; });
@@ -439,21 +470,15 @@ document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 // Resize canvas theo kích thước CSS thật (container max-width 1000px)
 // khi canvas chưa hiển thị (display:none) clientWidth = 0, fallback innerWidth.
+// Vị trí người chơi (me.x/me.y) luôn ở hệ tọa độ world (WORLD_W x WORLD_H)
+// dùng chung cho mọi thiết bị — resize canvas chỉ đổi cách quy đổi world -> pixel
+// khi vẽ, không cần clamp lại tọa độ.
 function fitCanvas() {
   const w = canvas.clientWidth || window.innerWidth;
   const h = canvas.clientHeight || (window.innerHeight - 70);
   if (w > 0 && h > 0) {
     canvas.width = w;
     canvas.height = h;
-    // Clamp me vào bound mới (server có thể đã spawn ngoài vùng visible)
-    if (me) {
-      const rr = charRadius(me);
-      me.x = Math.max(rr, Math.min(w - rr, me.x));
-      me.y = Math.max(rr, Math.min(h - rr, me.y));
-    }
-    if (typeof socket !== 'undefined' && socket.connected) {
-      socket.emit('canvas-size', { canvasW: w, canvasH: h });
-    }
   }
 }
 window.addEventListener('resize', fitCanvas);
@@ -481,16 +506,21 @@ function loop(ts) {
     if (joy.active) { dx += joy.dx; dy += joy.dy; }
 
     if (dx || dy) {
+      // quy đổi bước di chuyển (tính theo pixel canvas) sang đơn vị world,
+      // để tốc độ CẢM NHẬN trên màn hình giống nhau dù canvas to hay nhỏ
+      const scaleX = WORLD_W / canvas.width;
+      const scaleY = WORLD_H / canvas.height;
       const r = charRadius(me);
-      let nx = Math.max(r, Math.min(canvas.width - r, me.x + dx * speed));
-      let ny = Math.max(r, Math.min(canvas.height - r, me.y + dy * speed));
+      const rx = r * scaleX, ry = r * scaleY;
+      let nx = Math.max(rx, Math.min(WORLD_W - rx, me.x + dx * speed * scaleX));
+      let ny = Math.max(ry, Math.min(WORLD_H - ry, me.y + dy * speed * scaleY));
       me.x = nx; me.y = ny;
 
       me.lastMoveTime = Date.now();
       if (dx > 0) me.facing = 1;
       else if (dx < 0) me.facing = -1;
 
-      if (ts - lastSent > 60) {
+      if (ts - lastSent > 110) {
         socket.emit('move', { x: me.x, y: me.y });
         lastSent = ts;
       }
@@ -535,12 +565,21 @@ function render() {
 
   list.forEach(p => {
     if (p.id === socket.id && me) { p.x = me.x; p.y = me.y; p.facing = me.facing; }
-    drawPlayer(p);
   });
+  // Vẽ theo thứ tự Y (painter's algorithm): ai đứng thấp hơn trên màn hình (gần
+  // "camera" hơn) được vẽ sau nên đè lên người phía trên — không phụ thuộc thứ
+  // tự vào phòng như trước (khiến người vào sau luôn đè lên người vào trước).
+  list.sort((a, b) => a.y - b.y);
+  list.forEach(p => drawPlayer(p));
 }
+
+// Quy đổi tọa độ world (chung cho mọi thiết bị) -> pixel canvas của riêng client này.
+function worldToCanvasX(wx) { return wx * (canvas.width / WORLD_W); }
+function worldToCanvasY(wy) { return wy * (canvas.height / WORLD_H); }
 
 function drawPlayer(p) {
   const ch = charMap[p.characterId] || { emoji: '❓', color: '#fff' };
+  const px = worldToCanvasX(p.x), py = worldToCanvasY(p.y);
   // nhân vật: sprite (nếu có _img đã load) hoặc fallback emoji
   if (ch._img && ch._img.complete && ch.fw) {
     const frame = isMoving(p) ? currentFrame(ch.frames) : 0;
@@ -551,19 +590,19 @@ function drawPlayer(p) {
     const base = ch.baseFacing || 1;
     if (facing !== base) {
       ctx.save();
-      ctx.translate(p.x, p.y - dh / 2 + 3);
+      ctx.translate(px, py - dh / 2 + 3);
       ctx.scale(-1, 1);
       ctx.drawImage(ch._img, frame * ch.fw, 0, ch.fw, ch.fh, -dw / 2, 0, dw, dh);
       ctx.restore();
     } else {
-      ctx.drawImage(ch._img, frame * ch.fw, 0, ch.fw, ch.fh, p.x - dw / 2, p.y - dh / 2 + 3, dw, dh);
+      ctx.drawImage(ch._img, frame * ch.fw, 0, ch.fw, ch.fh, px - dw / 2, py - dh / 2 + 3, dw, dh);
     }
   } else {
     ctx.font = '20px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    if ((p.facing || 1) < 0) { ctx.save(); ctx.translate(p.x, 0); ctx.scale(-1, 1); }
-    ctx.fillText(ch.emoji, 0, p.y + 1);
+    if ((p.facing || 1) < 0) { ctx.save(); ctx.translate(px, 0); ctx.scale(-1, 1); }
+    ctx.fillText(ch.emoji, 0, py + 1);
     if ((p.facing || 1) < 0) ctx.restore();
   }
 }

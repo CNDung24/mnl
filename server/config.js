@@ -14,15 +14,22 @@ module.exports = {
   // Cấu hình trận đấu
   TEAM_COUNT: 5,
   START_HP: 10,
-  ANSWER_TIME: 20,      // số giây trả lời mỗi câu
+  ANSWER_TIME: 10,      // số giây trả lời mỗi câu
   ATTACK_TIME: 15,      // số giây chọn đội để tấn công
 
-  // 5 đội cố định
+  // Kích thước "thế giới" sảnh chờ chung — TẤT CẢ người chơi (mọi thiết bị,
+  // mọi kích thước màn hình) di chuyển trong cùng 1 không gian tọa độ này.
+  // Mỗi client tự quy đổi world -> pixel màn hình riêng của mình khi vẽ,
+  // nên vị trí luôn nhất quán/tương đối đúng dù màn hình to nhỏ khác nhau.
+  WORLD_W: 1600,
+  WORLD_H: 900,
+
+  // 5 đội cố định — mỗi đội gắn sẵn 1 nhân vật mặc định (xem server/data/characters.js)
   TEAMS: [
-    { id: 1, name: 'Đội 1', color: '#e74c3c' },
-    { id: 2, name: 'Đội 2', color: '#3498db' },
-    { id: 3, name: 'Đội 3', color: '#2ecc71' },
-    { id: 4, name: 'Đội 4', color: '#f1c40f' },
-    { id: 5, name: 'Đội 5', color: '#9b59b6' }
+    { id: 1, name: 'Đội 1', color: '#e74c3c', characterId: 'char_51' },
+    { id: 2, name: 'Đội 2', color: '#3498db', characterId: 'char_52' },
+    { id: 3, name: 'Đội 3', color: '#2ecc71', characterId: 'char_53' },
+    { id: 4, name: 'Đội 4', color: '#f1c40f', characterId: 'char_54' },
+    { id: 5, name: 'Đội 5', color: '#9b59b6', characterId: 'char_55' }
   ]
 };

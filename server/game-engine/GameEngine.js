@@ -2,8 +2,8 @@ const config = require('../config');
 const defaultQuestions = require('../data/questions');
 const characters = require('../data/characters');
 
-const DEFAULT_W = 1600;
-const DEFAULT_H = 900;
+const WORLD_W = config.WORLD_W;
+const WORLD_H = config.WORLD_H;
 
 /**
  * GameEngine: quản lý toàn bộ trạng thái một trận đấu.
@@ -20,28 +20,11 @@ const DEFAULT_H = 900;
 class GameEngine {
   constructor() {
     this.characters = characters;
-    this.playerCanvas = new Map();   // socketId -> {w, h}
     this.reset(true);
   }
 
   characterById(id) {
     return this.characters.find(c => c.id === id);
-  }
-
-  // Cập nhật kích thước canvas (viewport) của 1 người chơi + clamp vị trí hiện tại
-  setPlayerCanvas(socketId, w, h) {
-    this.playerCanvas.set(socketId, { w: Math.max(200, +w || DEFAULT_W), h: Math.max(200, +h || DEFAULT_H) });
-    const p = this.players.get(socketId);
-    if (p) {
-      const r = this.playerRadius(p);
-      const c = this.getPlayerCanvas(socketId);
-      p.x = Math.max(r, Math.min(c.w - r, p.x));
-      p.y = Math.max(r, Math.min(c.h - r, p.y));
-    }
-  }
-
-  getPlayerCanvas(socketId) {
-    return this.playerCanvas.get(socketId) || { w: DEFAULT_W, h: DEFAULT_H };
   }
 
   // Bán kính va chạm của nhân vật (sprite được vẽ 2x trên canvas).
@@ -78,22 +61,19 @@ class GameEngine {
   }
 
   // ---------- NGƯỜI CHƠI ----------
-  addPlayer(socketId, { name, teamId, characterId }) {
-    // chặn nếu nhân vật đã có người chọn
-    for (const p of this.players.values()) {
-      if (p.characterId === characterId) {
-        return { error: 'Nhân vật đã có người chọn' };
-      }
-    }
-    const c = this.getPlayerCanvas(socketId);
+  addPlayer(socketId, { name, teamId }) {
+    const team = this.team(Number(teamId));
+    if (!team) return { error: 'Đội không hợp lệ' };
     const margin = 50;
     const player = {
       id: socketId,
       name: String(name).slice(0, 16),
       teamId: Number(teamId),
-      characterId,
-      x: margin + Math.random() * Math.max(50, c.w - margin * 2),
-      y: margin + Math.random() * Math.max(50, c.h - margin * 2),
+      characterId: team.characterId,
+      // Tọa độ theo không gian "thế giới" chung (WORLD_W x WORLD_H) — giống nhau
+      // với mọi người chơi bất kể kích thước màn hình thiết bị của họ.
+      x: margin + Math.random() * (WORLD_W - margin * 2),
+      y: margin + Math.random() * (WORLD_H - margin * 2),
       score: 0
     };
     this.players.set(socketId, player);
@@ -102,17 +82,15 @@ class GameEngine {
 
   removePlayer(socketId) {
     this.players.delete(socketId);
-    this.playerCanvas.delete(socketId);
   }
 
   movePlayer(socketId, x, y) {
     const p = this.players.get(socketId);
     if (!p) return;
     const r = this.playerRadius(p);
-    const c = this.getPlayerCanvas(socketId);
-    // giới hạn canvas theo viewport của người chơi (không có va chạm)
-    p.x = Math.max(r, Math.min(c.w - r, x));
-    p.y = Math.max(r, Math.min(c.h - r, y));
+    // giới hạn trong biên "thế giới" chung (không có va chạm)
+    p.x = Math.max(r, Math.min(WORLD_W - r, x));
+    p.y = Math.max(r, Math.min(WORLD_H - r, y));
   }
 
   _canStand(self, x, y) {
@@ -128,10 +106,6 @@ class GameEngine {
 
   getPlayersByTeam(teamId) {
     return [...this.players.values()].filter(p => p.teamId === teamId);
-  }
-
-  takenCharacterIds() {
-    return [...this.players.values()].map(p => p.characterId);
   }
 
   team(teamId) {
@@ -275,6 +249,7 @@ class GameEngine {
       .filter(([_, tr]) => tr.correct)
       .sort((a, b) => a[1].timeMs - b[1].timeMs);
     this.winnerTeamId = correctTeams.length ? correctTeams[0][0] : null;
+    const winnerTimeMs = correctTeams.length ? correctTeams[0][1].timeMs : null;
     this.pendingAttackerTeam = this.winnerTeamId;
 
     // lưu lịch sử
@@ -294,7 +269,7 @@ class GameEngine {
 
     this.phase = this.winnerTeamId ? 'attack' : 'reveal';
 
-    return { ok: true, results, damaged, winnerTeamId: this.winnerTeamId, record };
+    return { ok: true, results, damaged, winnerTeamId: this.winnerTeamId, winnerTimeMs, record };
   }
 
   // Đội thắng chọn đội để tấn công
@@ -345,8 +320,7 @@ class GameEngine {
       winnerTeamId: this.winnerTeamId,
       attackerTeam: this.pendingAttackerTeam,
       attackableTeams: this.attackableTeams(),
-      leaderboard: this.leaderboard(),
-      takenCharacters: this.takenCharacterIds()
+      leaderboard: this.leaderboard()
     };
   }
 }

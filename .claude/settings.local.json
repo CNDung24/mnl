@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Receive-Job *)"
+      "PowerShell(Receive-Job *)",
+      "Bash(node -c server/config.js)",
+      "Bash(node -c server/data/characters.js)",
+      "Bash(node -c server/game-engine/GameEngine.js)",
+      "Bash(node -c server/socket/index.js)",
+      "Bash(node -c client/js/play.js)",
+      "Bash(MONGO_URI=\"\" timeout 4 node server/index.js)",
+      "Bash(MONGO_URI=\"\" node server/index.js)",
+      "Bash(curl -s http://localhost:3000/ -o /dev/null -w \"HTTP %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3000/play -o /dev/null -w \"HTTP %{http_code}\\\\n\")",
+      "Bash(kill %1)",
+      "Bash(node *)",
+      "Bash(MONGO_URI=\"\" timeout 3 node server/index.js)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(powershell -NoProfile -Command \"Get-NetTCPConnection -LocalPort 3000 -State Listen | Select-Object -ExpandProperty OwningProcess\")",
+      "Bash(netstat -ano)",
+      "Bash(powershell -NoProfile -Command \"Get-Process -Id 9244 | Select-Object Id,ProcessName,Path\")",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 14768 -Force -ErrorAction SilentlyContinue\")"
     ]
   }
 }
