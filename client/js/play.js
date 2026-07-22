@@ -224,29 +224,89 @@ socket.on('state', (s) => {
 });
 
 socket.on('your-turn', (data) => {
-  // chỉ hiện câu hỏi mới khi round thực sự đổi VÀ đội mình còn sống
+  // chỉ hiện câu hỏi mới khi round thực sự đổi. Đội đã bị loại vẫn thấy câu hỏi
+  // để ôn bài, chỉ không được bấm trả lời (readOnly).
   if (!state || !me) return;
-  const myTeam = state.teams.find(t => t.id === me.teamId);
-  if (!myTeam || !myTeam.alive) return;
   if (state.round !== lastShownRound) {
-    showQuestion(data.question);
+    const myTeam = state.teams.find(t => t.id === me.teamId);
+    showQuestion(data.question, !(myTeam && myTeam.alive));
   }
 });
 
 socket.on('answer-received', () => {});
 
+// Thời gian hiện bảng tóm tắt (5 nhân vật + đáp án + thời gian) trước khi công bố người thắng
+const RESULTS_SUMMARY_MS = 3500;
+let summaryShowing = false;   // đang hiện bảng tóm tắt -> tạm giữ sự kiện attack-phase lại
+let pendingAttackPhase = null;
+
 socket.on('reveal', (data) => {
   // hiện kết quả trên câu hỏi nếu đang mở
   highlightCorrect(data.correct);
-  if (data.winnerTeamId) showWinnerOverlay(data.winnerTeamId, data.winnerTimeMs);
-  else showNoWinnerOverlay();
+  summaryShowing = true;
+  showResultsSummary(data.results, () => {
+    summaryShowing = false;
+    if (data.winnerTeamId) showWinnerOverlay(data.winnerTeamId, data.winnerTimeMs);
+    else showNoWinnerOverlay();
+    if (pendingAttackPhase) {
+      const ap = pendingAttackPhase;
+      pendingAttackPhase = null;
+      applyAttackPhase(ap);
+    }
+  });
 });
+
+// ---------- Bảng tóm tắt: nhân vật từng đội + đáp án đã chọn + thời gian ----------
+function showResultsSummary(results, onDone) {
+  const overlay = document.getElementById('winner-overlay');
+  const card = document.getElementById('winner-card');
+  card.style.setProperty('--wt-color', 'var(--gold)');
+
+  // Ẩn các phần khác của overlay, chỉ hiện bảng tóm tắt
+  document.getElementById('winner-badge').textContent = '';
+  document.getElementById('winner-char').innerHTML = '';
+  document.getElementById('winner-team').textContent = '';
+  document.getElementById('winner-time').textContent = '';
+  document.getElementById('winner-attack-section').classList.add('hidden');
+  document.getElementById('winner-wait-msg').classList.add('hidden');
+  document.getElementById('winner-battle').classList.add('hidden');
+
+  document.getElementById('results-round').textContent = state ? state.round : '';
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '';
+  const latin = ['A', 'B', 'C', 'D'];
+  (results || []).forEach(r => {
+    const t = TEAMS.find(x => x.id === r.teamId);
+    if (!t) return;
+    const ch = charMap[t.characterId];
+    const answered = r.choice >= 0 && r.choice <= 3;
+    const hasTime = typeof r.timeMs === 'number' && isFinite(r.timeMs);
+    const div = document.createElement('div');
+    div.className = 'result-card';
+    div.style.borderColor = t.color;
+    div.innerHTML = `
+      <div class="result-char">${idleCharHtml(ch, 1)}</div>
+      <div class="result-team" style="color:${t.color}">${t.name}</div>
+      <div class="result-answer ${r.correct ? 'correct' : 'wrong'}">${answered ? latin[r.choice] : '—'}</div>
+      <div class="result-time">${hasTime ? (r.timeMs / 1000).toFixed(2) + 's' : 'Không trả lời'}</div>`;
+    grid.appendChild(div);
+  });
+
+  document.getElementById('results-summary').classList.remove('hidden');
+  clearTimeout(winnerOverlayTimeout);
+  overlay.classList.remove('hidden');
+  winnerOverlayTimeout = setTimeout(() => {
+    document.getElementById('results-summary').classList.add('hidden');
+    onDone();
+  }, RESULTS_SUMMARY_MS);
+}
 
 // ---------- Overlay công bố đội thắng vòng + chọn tấn công ----------
 // Overlay này ở lại trên màn hình xuyên suốt reveal -> attack cho tới khi
 // có kết quả tấn công, để mọi người luôn thấy nhân vật đội thắng + trạng thái hiện tại.
 let winnerOverlayTimeout = null;
 function showWinnerOverlay(winnerTeamId, timeMs) {
+  document.getElementById('results-summary').classList.add('hidden');
   const t = TEAMS.find(x => x.id === winnerTeamId);
   if (!t) return;
   const ch = charMap[t.characterId];
@@ -276,6 +336,7 @@ function showWinnerOverlay(winnerTeamId, timeMs) {
 
 // Không đội nào trả lời đúng — báo ngắn gọn rồi tự ẩn, không có pha tấn công theo sau.
 function showNoWinnerOverlay() {
+  document.getElementById('results-summary').classList.add('hidden');
   const overlay = document.getElementById('winner-overlay');
   const card = document.getElementById('winner-card');
   const badge = document.getElementById('winner-badge');
@@ -300,9 +361,16 @@ function showNoWinnerOverlay() {
 }
 
 // Đội thắng thấy nút chọn mục tiêu ngay trong overlay; các đội khác chỉ thấy dòng chờ.
+// Nếu bảng tóm tắt kết quả đang hiện, giữ lại sự kiện này và áp dụng sau khi tóm tắt xong
+// (tránh đè lên overlay tóm tắt trước khi người chơi kịp xem).
 let pendingAttackerTeamId = null;
 socket.on('attack-phase', (data) => {
   pendingAttackerTeamId = data.attackerTeam;
+  if (summaryShowing) { pendingAttackPhase = data; return; }
+  applyAttackPhase(data);
+});
+
+function applyAttackPhase(data) {
   const overlay = document.getElementById('winner-overlay');
   if (overlay.classList.contains('hidden')) return; // an toàn (luôn có 'reveal' trước 'attack-phase')
   const attackSection = document.getElementById('winner-attack-section');
@@ -332,7 +400,7 @@ socket.on('attack-phase', (data) => {
     const t = TEAMS.find(x => x.id === data.attackerTeam);
     waitMsg.textContent = `⏳ ${t ? t.name : ''} đang chọn mục tiêu để tấn công...`;
   }
-});
+}
 
 socket.on('attacked', (data) => {
   const overlay = document.getElementById('winner-overlay');
@@ -364,6 +432,7 @@ function showAttackBattle(attackerTeamId, targetTeamId, eliminated) {
   const attackerCh = charMap[at.characterId];
   const targetCh = charMap[tt.characterId];
 
+  document.getElementById('results-summary').classList.add('hidden');
   document.getElementById('winner-badge').textContent = '⚔️ TẤN CÔNG!';
   document.getElementById('winner-char').innerHTML = '';
   document.getElementById('winner-team').textContent = '';
@@ -487,7 +556,6 @@ function spawnFirework(container) {
 // bục vinh danh sẽ bị tắt giữa chừng. Nó chỉ nên ẩn khi trận thực sự bắt đầu lại.
 function hideAll() {
   document.getElementById('question-box').classList.add('hidden');
-  document.getElementById('spectate-box').classList.add('hidden');
   document.getElementById('winner-overlay').classList.add('hidden');
   clearTimeout(winnerOverlayTimeout);
 }
@@ -506,6 +574,8 @@ function updatePhaseUI() {
 
   if (state.phase === 'lobby') {
     label.textContent = '🏛️ SẢNH CHỜ - chờ admin bắt đầu';
+    // Reset để trận sau (dù trùng số vòng với trận trước) vẫn hiện lại câu hỏi
+    lastShownRound = 0;
     hideAll();
     hideChampionOverlay();
     if (canvas) {
@@ -522,16 +592,10 @@ function updatePhaseUI() {
     if (canvas) canvas.classList.add('hidden');
     // Đã vào trận → ẩN joystick (di chuyển bị khóa)
     if (joystick) joystick.classList.add('hidden');
-    // Hiện câu hỏi cho tất cả người chơi thuộc đội còn sống
-    const myTeam = state.teams.find(t => t.id === me.teamId);
-    if (myTeam && myTeam.alive && state.question) {
-      if (state.round !== lastShownRound) showQuestion(state.question);
-    } else {
-      hideAll();
-      const sb = document.getElementById('spectate-box');
-      sb.classList.remove('hidden');
-      document.getElementById('spectate-msg').innerHTML =
-        `👀 Đội bạn đã bị loại — cổ vũ các đội khác nhé!`;
+    // Hiện câu hỏi cho TẤT CẢ người chơi, kể cả đội đã bị loại (chỉ xem, không trả lời được)
+    if (state.question && state.round !== lastShownRound) {
+      const myTeam = state.teams.find(t => t.id === me.teamId);
+      showQuestion(state.question, !(myTeam && myTeam.alive));
     }
   } else if (state.phase === 'attack') {
     label.textContent = '⚔ VÒNG ' + state.round + ' — TẤN CÔNG';
@@ -556,9 +620,13 @@ function updatePhaseUI() {
 // ---------- Câu hỏi ----------
 let answered = false;
 let lastShownRound = 0;  // vòng câu hỏi đang hiển thị trên màn hình
-function showQuestion(q) {
-  answered = false;
+function showQuestion(q, readOnly) {
+  answered = !!readOnly; // đội bị loại: không cho bấm trả lời
   lastShownRound = state ? state.round : 0;
+  // Hủy bảng tóm tắt/công bố thắng của vòng trước nếu admin chuyển câu quá nhanh
+  clearTimeout(winnerOverlayTimeout);
+  summaryShowing = false;
+  pendingAttackPhase = null;
   hideAll();
   const box = document.getElementById('question-box');
   box.classList.remove('hidden');
@@ -566,6 +634,7 @@ function showQuestion(q) {
   document.getElementById('q-text').textContent = q.text;
   document.getElementById('q-wait').classList.add('hidden');
   document.getElementById('q-next-wait').classList.add('hidden');
+  document.getElementById('q-spectate-note').classList.toggle('hidden', !readOnly);
   const wrap = document.getElementById('q-answers');
   wrap.innerHTML = '';
   const letters = ['Α', 'Β', 'Γ', 'Δ'];
@@ -575,7 +644,9 @@ function showQuestion(q) {
     b.className = 'ans-btn ans-' + latin[i];
     b.setAttribute('data-gr', letters[i]);
     b.innerHTML = `<span class="ans-text">${escapeHtml(opt)}</span>`;
-    b.onclick = () => sendAnswer(i, b);
+    b.onclick = readOnly
+      ? () => toast('Đội bạn đã bị loại — chỉ xem đáp án thôi nhé!')
+      : () => sendAnswer(i, b);
     wrap.appendChild(b);
   });
 }

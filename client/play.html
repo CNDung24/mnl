@@ -42,14 +42,10 @@
       </div>
       <div class="timer-bar"><div class="timer-fill" id="q-timer-fill" style="width:100%"></div></div>
       <p id="q-text" style="margin:14px 0;font-style:italic;font-size:18px;color:var(--ink)"></p>
+      <p id="q-spectate-note" class="center hidden" style="margin-bottom:10px;color:var(--ink-soft);font-style:italic">👀 Đội bạn đã bị loại — chỉ xem câu hỏi để ôn bài, không trả lời được nữa.</p>
       <div class="answers" id="q-answers"></div>
       <p id="q-wait" class="center hidden" style="margin-top:14px;color:var(--gold-dark);font-style:italic">Đã ghi nhận — chờ phán quyết...</p>
       <p id="q-next-wait" class="center hidden" style="margin-top:14px;color:var(--olive-gold);font-style:italic">✅ Đáp án đúng đã hiện ở trên — chờ ban tổ chức chuyển câu tiếp theo...</p>
-    </div>
-
-    <!-- Thông báo xem -->
-    <div id="spectate-box" class="panel hidden center" style="margin-top:16px">
-      <p id="spectate-msg" style="font-style:italic;color:var(--ink-soft)">Bạn đang quan sát vòng này — hãy cổ vũ phe mình! 👀</p>
     </div>
   </div>
 
@@ -69,6 +65,11 @@
   <!-- Overlay công bố đội thắng vòng + chọn đội để tấn công -->
   <div id="winner-overlay" class="winner-overlay hidden">
     <div id="winner-card" class="winner-card">
+      <!-- Bảng tóm tắt: 5 nhân vật + đáp án đã chọn + thời gian, hiện trước khi công bố người thắng -->
+      <div id="results-summary" class="results-summary hidden">
+        <div class="results-summary-title">📋 Kết quả vòng <span id="results-round"></span></div>
+        <div class="results-grid" id="results-grid"></div>
+      </div>
       <div id="winner-badge" class="winner-badge">🏆 CHIẾN THẮNG 🏆</div>
       <div id="winner-char" class="winner-char"></div>
       <div id="winner-team" class="winner-team"></div>

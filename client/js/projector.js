@@ -5,6 +5,7 @@ let CHARACTERS = [];
 let charMap = {};
 let state = null;
 let timerData = null;
+let lastQuestionRound = 0; // vòng câu hỏi đang hiển thị (để phát hiện khi sang câu mới)
 let isPaused = false;
 let frozenTimerRemain = null;
 
@@ -44,6 +45,11 @@ function renderPauseBanner() {
 
 let pendingAttackerTeamId = null;
 
+// Thời gian hiện bảng tóm tắt (5 nhân vật + đáp án + thời gian) trước khi công bố người thắng
+const RESULTS_SUMMARY_MS = 3500;
+let summaryShowing = false;   // đang hiện bảng tóm tắt -> tạm giữ sự kiện attack-phase lại
+let pendingAttackPhase = null;
+
 socket.on('reveal', (data) => {
   highlightCorrect(data.correct);
   // hiệu ứng rung khi bị trừ máu
@@ -51,20 +57,78 @@ socket.on('reveal', (data) => {
     const card = document.getElementById('team-card-' + tid);
     if (card) { card.classList.add('shake'); setTimeout(() => card.classList.remove('shake'), 500); }
   });
-  if (data.winnerTeamId) showWinnerOverlay(data.winnerTeamId, data.winnerTimeMs);
-  else showNoWinnerOverlay();
+  summaryShowing = true;
+  showResultsSummary(data.results, () => {
+    summaryShowing = false;
+    if (data.winnerTeamId) showWinnerOverlay(data.winnerTeamId, data.winnerTimeMs);
+    else showNoWinnerOverlay();
+    if (pendingAttackPhase) {
+      const ap = pendingAttackPhase;
+      pendingAttackPhase = null;
+      applyAttackPhase(ap);
+    }
+  });
 });
 
-// Đội thắng đang chọn mục tiêu — máy chiếu chỉ hiển thị trạng thái chờ (không có nút bấm)
+// ---------- Bảng tóm tắt: nhân vật từng đội + đáp án đã chọn + thời gian ----------
+function showResultsSummary(results, onDone) {
+  const overlay = document.getElementById('winner-overlay');
+  const card = document.getElementById('winner-card');
+  card.style.setProperty('--wt-color', 'var(--gold)');
+
+  document.getElementById('winner-badge').textContent = '';
+  document.getElementById('winner-char').innerHTML = '';
+  document.getElementById('winner-team').textContent = '';
+  document.getElementById('winner-time').textContent = '';
+  document.getElementById('winner-wait-msg').classList.add('hidden');
+  document.getElementById('winner-battle').classList.add('hidden');
+
+  document.getElementById('results-round').textContent = state ? state.round : '';
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '';
+  const latin = ['A', 'B', 'C', 'D'];
+  (results || []).forEach(r => {
+    const t = TEAMS.find(x => x.id === r.teamId);
+    if (!t) return;
+    const ch = charMap[t.characterId];
+    const answered = r.choice >= 0 && r.choice <= 3;
+    const hasTime = typeof r.timeMs === 'number' && isFinite(r.timeMs);
+    const div = document.createElement('div');
+    div.className = 'result-card';
+    div.style.borderColor = t.color;
+    div.innerHTML = `
+      <div class="result-char">${idleCharHtml(ch, 1)}</div>
+      <div class="result-team" style="color:${t.color}">${t.name}</div>
+      <div class="result-answer ${r.correct ? 'correct' : 'wrong'}">${answered ? latin[r.choice] : '—'}</div>
+      <div class="result-time">${hasTime ? (r.timeMs / 1000).toFixed(2) + 's' : 'Không trả lời'}</div>`;
+    grid.appendChild(div);
+  });
+
+  document.getElementById('results-summary').classList.remove('hidden');
+  clearTimeout(winnerOverlayTimeout);
+  overlay.classList.remove('hidden');
+  winnerOverlayTimeout = setTimeout(() => {
+    document.getElementById('results-summary').classList.add('hidden');
+    onDone();
+  }, RESULTS_SUMMARY_MS);
+}
+
+// Đội thắng đang chọn mục tiêu — máy chiếu chỉ hiển thị trạng thái chờ (không có nút bấm).
+// Nếu bảng tóm tắt đang hiện, giữ lại sự kiện và áp dụng sau khi tóm tắt xong.
 socket.on('attack-phase', (data) => {
   pendingAttackerTeamId = data.attackerTeam;
+  if (summaryShowing) { pendingAttackPhase = data; return; }
+  applyAttackPhase(data);
+});
+
+function applyAttackPhase(data) {
   const overlay = document.getElementById('winner-overlay');
   if (overlay.classList.contains('hidden')) return; // an toàn (luôn có 'reveal' trước 'attack-phase')
   const waitMsg = document.getElementById('winner-wait-msg');
   const t = TEAMS.find(x => x.id === data.attackerTeam);
   waitMsg.classList.remove('hidden');
   waitMsg.textContent = `⏳ ${t ? t.name : ''} đang chọn mục tiêu để tấn công...`;
-});
+}
 
 socket.on('attacked', (data) => {
   const card = document.getElementById('team-card-' + data.targetTeamId);
@@ -140,6 +204,7 @@ function facingStyle(ch, desiredFacing) {
 }
 
 function showWinnerOverlay(winnerTeamId, timeMs) {
+  document.getElementById('results-summary').classList.add('hidden');
   const t = TEAMS.find(x => x.id === winnerTeamId);
   if (!t) return;
   const ch = charMap[t.characterId];
@@ -165,6 +230,7 @@ function showWinnerOverlay(winnerTeamId, timeMs) {
 }
 
 function showNoWinnerOverlay() {
+  document.getElementById('results-summary').classList.add('hidden');
   const overlay = document.getElementById('winner-overlay');
   const card = document.getElementById('winner-card');
   const badge = document.getElementById('winner-badge');
@@ -194,6 +260,7 @@ function showAttackBattle(attackerTeamId, targetTeamId, eliminated) {
   const attackerCh = charMap[at.characterId];
   const targetCh = charMap[tt.characterId];
 
+  document.getElementById('results-summary').classList.add('hidden');
   document.getElementById('winner-badge').textContent = '⚔️ TẤN CÔNG!';
   document.getElementById('winner-char').innerHTML = '';
   document.getElementById('winner-team').textContent = '';
@@ -287,6 +354,14 @@ function renderTeams() {
 function renderQuestion() {
   const panel = document.getElementById('q-panel');
   if (state.phase === 'question' && state.question) {
+    if (state.round !== lastQuestionRound) {
+      // Sang câu mới: hủy bảng tóm tắt/công bố thắng của vòng trước (nếu admin
+      // chuyển câu quá nhanh trong lúc bảng tóm tắt vòng trước còn đang hiện)
+      lastQuestionRound = state.round;
+      clearTimeout(winnerOverlayTimeout);
+      summaryShowing = false;
+      pendingAttackPhase = null;
+    }
     panel.classList.remove('hidden');
     document.getElementById('q-text').textContent = state.question.text;
     const el = document.getElementById('q-options');

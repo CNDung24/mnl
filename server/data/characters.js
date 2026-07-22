@@ -27,15 +27,13 @@ const CUSTOM_SPRITES = {
 // Sprite hoạt ảnh "tấn công" (dùng khi đội thắng vòng tung chiêu vào đội bị chọn).
 // Cùng khung 64x64, baseFacing giống sprite đi bộ ở trên.
 // lastFrame: frame cuối cùng THỰC SỰ có hình để đứng lại sau khi animation chạy xong
-// (mặc định = frames - 1). char_53/char_55 có 8 ô trong sprite sheet nhưng ô thứ 8
-// (index 7) bị để trống — nếu không khai báo riêng, nhân vật sẽ "biến mất" sau khi
-// tấn công vì đứng lại ở đúng ô trống đó.
+// (mặc định = frames - 1).
 const ATTACK_SPRITES = {
   char_51: { image: 'img/characters/char_51_attack.png', frames: 7, fw: 64, fh: 64 },
   char_52: { image: 'img/characters/char_52_attack.png', frames: 7, fw: 64, fh: 64 },
-  char_53: { image: 'img/characters/char_53_attack.png', frames: 8, fw: 64, fh: 64, lastFrame: 6 },
+  char_53: { image: 'img/characters/char_53_attack.png', frames: 7, fw: 64, fh: 64 },
   char_54: { image: 'img/characters/char_54_attack.png', frames: 7, fw: 64, fh: 64 },
-  char_55: { image: 'img/characters/char_55_attack.png', frames: 8, fw: 64, fh: 64, lastFrame: 6 }
+  char_55: { image: 'img/characters/char_55_attack.png', frames: 7, fw: 64, fh: 64 }
 };
 
 const CHARACTERS = RAW.map((c, i) => {
