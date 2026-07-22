@@ -847,6 +847,12 @@ body.in-lobby #lobby-canvas::after {
   background: radial-gradient(circle, #fff8d6, var(--olive-gold));
   color: #4a3a08;
 }
+/* Đáp án đúng luôn rõ nét kể cả khi nút đã bị disable (sau khi trả lời/chốt) */
+.ans-btn.correct:disabled {
+  opacity: 1;
+  filter: none;
+  cursor: default;
+}
 .ans-btn.wrong {
   opacity: 0.45;
   filter: grayscale(0.5);

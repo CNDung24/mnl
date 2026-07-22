@@ -15,7 +15,7 @@ module.exports = {
   TEAM_COUNT: 5,
   MAX_PLAYERS_PER_TEAM: 1,   // mỗi đội chỉ nhận tối đa 1 người chơi
   START_HP: 5,
-  ANSWER_TIME: 10,      // số giây trả lời mỗi câu
+  ANSWER_TIME: 15,      // số giây trả lời mỗi câu
   ATTACK_TIME: 15,      // số giây chọn đội để tấn công
 
   // Kích thước "thế giới" sảnh chờ chung — TẤT CẢ người chơi (mọi thiết bị,

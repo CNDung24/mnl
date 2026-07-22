@@ -12,6 +12,7 @@ socket.on('init', (data) => {
   paused = !!data.paused;
   updatePauseBtn();
   renderHP();
+  document.getElementById('btn-next').disabled = state.phase !== 'reveal';
 });
 
 socket.on('game-paused', (data) => {
@@ -64,6 +65,11 @@ document.getElementById('btn-reset').onclick = () => {
 document.getElementById('btn-reveal').onclick = () => {
   socket.emit('admin:reveal', { correct: selectedCorrect }, () => {});
 };
+document.getElementById('btn-next').onclick = () => {
+  socket.emit('admin:next-round', {}, (res) => {
+    if (!res.ok) alert(res.error || 'Lỗi');
+  });
+};
 
 // ---------- State ----------
 socket.on('state', (s) => {
@@ -71,6 +77,7 @@ socket.on('state', (s) => {
   renderHP();
   renderCurrentQuestion();
   document.getElementById('phase-info').textContent = 'Pha: ' + s.phase + ' | Vòng: ' + s.round;
+  document.getElementById('btn-next').disabled = s.phase !== 'reveal';
   loadHistory();
 });
 

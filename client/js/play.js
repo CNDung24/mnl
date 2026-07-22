@@ -501,14 +501,13 @@ function updatePhaseUI() {
   if (!state || !me) return;
   const label = document.getElementById('status-label');
   const canvas = document.getElementById('lobby-canvas');
-  const banner = document.getElementById('next-round-banner');
   const joystick = document.getElementById('joystick');
+  const nextWait = document.getElementById('q-next-wait');
 
   if (state.phase === 'lobby') {
     label.textContent = '🏛️ SẢNH CHỜ - chờ admin bắt đầu';
     hideAll();
     hideChampionOverlay();
-    if (banner) banner.classList.add('hidden');
     if (canvas) {
       canvas.classList.remove('hidden');
       fitCanvas();
@@ -521,7 +520,6 @@ function updatePhaseUI() {
   } else if (state.phase === 'question') {
     label.textContent = '⚔ VÒNG ' + state.round + ' — TRẢ LỜI CÂU HỎI';
     if (canvas) canvas.classList.add('hidden');
-    if (banner) banner.classList.add('hidden');
     // Đã vào trận → ẩN joystick (di chuyển bị khóa)
     if (joystick) joystick.classList.add('hidden');
     // Hiện câu hỏi cho tất cả người chơi thuộc đội còn sống
@@ -539,15 +537,17 @@ function updatePhaseUI() {
     label.textContent = '⚔ VÒNG ' + state.round + ' — TẤN CÔNG';
     if (canvas) canvas.classList.add('hidden');
     if (joystick) joystick.classList.add('hidden');
-    document.getElementById('question-box').classList.add('hidden');
+    // KHÔNG ẩn question-box — giữ câu hỏi + đáp án đúng hiển thị để người chơi ôn lại
   } else if (state.phase === 'reveal') {
-    label.textContent = '⚔ VÒNG ' + state.round + ' — Kết quả';
+    label.textContent = '⚔ VÒNG ' + state.round + ' — Kết quả (chờ câu tiếp theo)';
     if (canvas) canvas.classList.add('hidden');
     if (joystick) joystick.classList.add('hidden');
+    if (nextWait && !document.getElementById('question-box').classList.contains('hidden')) {
+      nextWait.classList.remove('hidden');
+    }
   } else if (state.phase === 'finished') {
     label.textContent = '🏆 TRẬN ĐẤU KẾT THÚC';
     hideAll();
-    if (banner) banner.classList.add('hidden');
     if (canvas) canvas.classList.add('hidden');
     if (joystick) joystick.classList.add('hidden');
   }
@@ -565,6 +565,7 @@ function showQuestion(q) {
   document.getElementById('q-round').textContent = 'VÒNG ' + (state ? state.round : '');
   document.getElementById('q-text').textContent = q.text;
   document.getElementById('q-wait').classList.add('hidden');
+  document.getElementById('q-next-wait').classList.add('hidden');
   const wrap = document.getElementById('q-answers');
   wrap.innerHTML = '';
   const letters = ['Α', 'Β', 'Γ', 'Δ'];
@@ -604,16 +605,9 @@ function highlightCorrect(correct) {
 // tại đúng thời điểm tạm dừng cho tới khi admin bấm tiếp tục.
 let isPaused = false;
 let frozenTimerRemain = null;
-let frozenNextRoundRemain = null;
 socket.on('game-paused', (d) => {
   isPaused = !!(d && d.paused);
-  if (isPaused) {
-    frozenTimerRemain = timerData ? Math.max(0, timerData.endsAt - Date.now()) : null;
-    frozenNextRoundRemain = nextRoundData ? Math.max(0, nextRoundData.endsAt - Date.now()) : null;
-  } else {
-    frozenTimerRemain = null;
-    frozenNextRoundRemain = null;
-  }
+  frozenTimerRemain = isPaused && timerData ? Math.max(0, timerData.endsAt - Date.now()) : null;
   renderPauseBanner();
 });
 function renderPauseBanner() {
@@ -642,26 +636,6 @@ setInterval(() => {
   const fill = document.getElementById('q-timer-fill');
   if (fill) fill.style.width = (remain / (timerData.seconds * 1000) * 100) + '%';
 }, 200);
-
-// ---------- Countdown tới vòng tiếp theo ----------
-let nextRoundData = null;
-socket.on('next-round-countdown', (d) => {
-  nextRoundData = d && d.active ? d : null;
-  renderNextRoundBanner();
-});
-function renderNextRoundBanner() {
-  const el = document.getElementById('next-round-banner');
-  if (!el) return;
-  if (!nextRoundData) { el.classList.add('hidden'); return; }
-  el.classList.remove('hidden');
-  const remainMs = (isPaused && frozenNextRoundRemain !== null)
-    ? frozenNextRoundRemain
-    : Math.max(0, nextRoundData.endsAt - Date.now());
-  const sec = Math.max(0, Math.ceil(remainMs / 1000));
-  document.getElementById('next-round-text').innerHTML =
-    `⏳ Vòng tiếp theo bắt đầu sau <b>${sec}s</b>…`;
-}
-setInterval(renderNextRoundBanner, 250);
 
 // ============ LOBBY CANVAS ============
 const canvas = document.getElementById('lobby-canvas');

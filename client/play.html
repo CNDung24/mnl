@@ -34,11 +34,6 @@
 
     <canvas id="lobby-canvas" width="900" height="500"></canvas>
 
-    <!-- Banner đếm ngược tới vòng tiếp theo -->
-    <div id="next-round-banner" class="next-round-banner hidden">
-      <span id="next-round-text">⏳ Vòng tiếp theo bắt đầu sau <b>5s</b>…</span>
-    </div>
-
     <!-- Khu vực trả lời câu hỏi -->
     <div id="question-box" class="panel hidden" style="margin-top:16px">
       <div class="row" style="justify-content:space-between">
@@ -49,6 +44,7 @@
       <p id="q-text" style="margin:14px 0;font-style:italic;font-size:18px;color:var(--ink)"></p>
       <div class="answers" id="q-answers"></div>
       <p id="q-wait" class="center hidden" style="margin-top:14px;color:var(--gold-dark);font-style:italic">Đã ghi nhận — chờ phán quyết...</p>
+      <p id="q-next-wait" class="center hidden" style="margin-top:14px;color:var(--olive-gold);font-style:italic">✅ Đáp án đúng đã hiện ở trên — chờ ban tổ chức chuyển câu tiếp theo...</p>
     </div>
 
     <!-- Thông báo xem -->

@@ -11,13 +11,10 @@ function registerSockets(io, engine) {
   let timerEndsAt = 0;
   let timerSeconds = 0;      // tổng số giây gốc (để tính % thanh thời gian)
   let timerOnEnd = null;     // callback hiện tại của timer (để tiếp tục lại sau khi tạm dừng)
-  let nextRoundTimer = null; // đếm ngược tự chuyển vòng
-  let nextRoundEndsAt = 0;
-  const NEXT_ROUND_DELAY = 5; // số giây chờ giữa các vòng
 
   // ----- Tạm dừng / tiếp tục -----
   let paused = false;
-  let pausedInfo = null; // { kind: 'timer'|'nextRound', remainMs, seconds, onEnd }
+  let pausedInfo = null; // { kind: 'timer', remainMs, seconds, onEnd }
 
   // Nếu có hành động thủ công (VD: admin "Chốt đáp án" khi đang tạm dừng) khiến
   // một pha/vòng mới bắt đầu, hủy cờ tạm dừng để không bị kẹt banner "TẠM DỪNG"
@@ -36,10 +33,6 @@ function registerSockets(io, engine) {
       const remainMs = Math.max(0, timerEndsAt - Date.now());
       clearInterval(timer); timer = null;
       pausedInfo = { kind: 'timer', remainMs, seconds: timerSeconds, onEnd: timerOnEnd };
-    } else if (nextRoundTimer) {
-      const remainMs = Math.max(0, nextRoundEndsAt - Date.now());
-      clearInterval(nextRoundTimer); nextRoundTimer = null;
-      pausedInfo = { kind: 'nextRound', remainMs };
     } else {
       pausedInfo = null;
     }
@@ -51,49 +44,23 @@ function registerSockets(io, engine) {
   function resumeGame() {
     if (!paused) return { ok: false, error: 'Chưa tạm dừng' };
     paused = false;
-    if (pausedInfo) {
-      if (pausedInfo.kind === 'timer' && pausedInfo.onEnd) {
-        startTimer(pausedInfo.seconds, pausedInfo.onEnd, Math.max(250, pausedInfo.remainMs));
-      } else if (pausedInfo.kind === 'nextRound') {
-        scheduleAutoAdvance(Math.max(250, pausedInfo.remainMs));
-      }
+    if (pausedInfo && pausedInfo.kind === 'timer' && pausedInfo.onEnd) {
+      startTimer(pausedInfo.seconds, pausedInfo.onEnd, Math.max(250, pausedInfo.remainMs));
     }
     pausedInfo = null;
     io.emit('game-paused', { paused: false });
     return { ok: true };
   }
 
-  function clearNextRoundTimer() {
-    if (nextRoundTimer) { clearInterval(nextRoundTimer); nextRoundTimer = null; }
-    nextRoundEndsAt = 0;
-    io.emit('next-round-countdown', { active: false });
-  }
-
-  // Sau khi một vòng kết thúc (reveal/attack xong), đếm ngược rồi tự sang vòng mới.
-  // customRemainMs: dùng khi tiếp tục lại sau khi tạm dừng (đếm tiếp phần thời gian còn lại).
-  function scheduleAutoAdvance(customRemainMs) {
-    clearPauseIfAny();
-    if (nextRoundTimer) clearInterval(nextRoundTimer); // hủy timer cũ (nếu có) nhưng KHÔNG emit false để tránh flicker
-    const durationMs = (typeof customRemainMs === 'number') ? customRemainMs : NEXT_ROUND_DELAY * 1000;
-    nextRoundEndsAt = Date.now() + durationMs;
-    io.emit('next-round-countdown', { active: true, seconds: NEXT_ROUND_DELAY, endsAt: nextRoundEndsAt });
-    nextRoundTimer = setInterval(() => {
-      const remain = Math.max(0, nextRoundEndsAt - Date.now());
-      if (remain <= 0) {
-        clearNextRoundTimer();
-        advanceToNextRound();
-      }
-    }, 250);
-  }
-
-  // Gọi sang vòng tiếp theo. Có thể được gọi tự động (auto-advance) hoặc do admin bấm.
+  // Sang câu hỏi tiếp theo — CHỈ được gọi khi admin bấm nút (pha 'reveal'),
+  // không còn tự động đếm ngược để giữ câu hỏi + đáp án đúng trên màn hình
+  // cho người chơi ôn lại tới khi admin chủ động chuyển tiếp.
   function advanceToNextRound() {
     if (engine.phase === 'finished' || engine.phase === 'lobby') return;
     const r = engine.nextRound();
     if (r.ok && !r.finished) beginQuestionPhase();
     else {
       clearTimer();
-      clearNextRoundTimer();
       broadcastState();
       io.emit('match-finished', { winnerTeamId: r.winnerTeamId, podium: r.podium });
     }
@@ -175,12 +142,7 @@ function registerSockets(io, engine) {
           io.emit('attacked', { attackerTeamId, targetTeamId: t, eliminated: cr.eliminated, auto: true });
         }
         broadcastState();
-        // Sau khi đội thắng đã tấn công xong (hoặc bị bỏ qua do hết giờ) → đếm ngược vòng mới
-        scheduleAutoAdvance();
       });
-    } else {
-      // Không có đội thắng (tất cả sai) → reveal phase → đếm ngược vòng mới luôn
-      scheduleAutoAdvance();
     }
     broadcastState();
   }
@@ -248,8 +210,6 @@ function registerSockets(io, engine) {
         broadcastState();
         repo.updateHistoryAttack(engine.round, r.targetTeamId).catch(() => {});
         persistScores();
-        // Đã tấn công xong → đếm ngược vòng mới
-        scheduleAutoAdvance();
       }
     });
 
@@ -280,6 +240,14 @@ function registerSockets(io, engine) {
       cb && cb({ ok: true });
     });
 
+    // Chuyển sang câu hỏi tiếp theo — chỉ admin bấm mới sang, không tự động.
+    socket.on('admin:next-round', (data, cb) => {
+      if (!requireAdmin()) return cb && cb({ ok: false });
+      if (engine.phase !== 'reveal') return cb && cb({ ok: false, error: 'Chưa đến lúc sang câu tiếp theo' });
+      advanceToNextRound();
+      cb && cb({ ok: true });
+    });
+
     socket.on('admin:toggle-pause', (data, cb) => {
       if (!requireAdmin()) return cb && cb({ ok: false });
       const r = paused ? resumeGame() : pauseGame();
@@ -289,7 +257,6 @@ function registerSockets(io, engine) {
     socket.on('admin:reset', (data, cb) => {
       if (!requireAdmin()) return cb && cb({ ok: false });
       clearTimer();
-      clearNextRoundTimer();
       if (paused) { paused = false; pausedInfo = null; io.emit('game-paused', { paused: false }); }
       engine.reset();
       cb && cb({ ok: true });
