@@ -65,6 +65,7 @@ class GameEngine {
     this.winnerTeamId = null;         // đội thắng vòng hiện tại
     this.pendingAttackerTeam = null;  // đội đang có quyền tấn công
     this.questionIndex = 0;
+    this.eliminationOrder = [];       // teamId theo thứ tự bị loại (để xếp hạng 2, 3 khi kết thúc trận)
   }
 
   // ---------- NGƯỜI CHƠI ----------
@@ -144,7 +145,15 @@ class GameEngine {
     this.usedPlayerIds.clear();
     this.history = [];
     this.questionIndex = 0;
+    this.eliminationOrder = [];
     return this.nextRound();
+  }
+
+  // Bảng xếp hạng khi trận kết thúc: hạng 1 = đội thắng, hạng 2/3 = 2 đội bị loại
+  // gần đây nhất (trụ vững lâu nhất trong số các đội thua).
+  podium(winnerTeamId) {
+    const runnersUp = [...this.eliminationOrder].reverse();
+    return [winnerTeamId, ...runnersUp].filter(id => id != null).slice(0, 3);
   }
 
   // Bắt đầu một vòng mới: tất cả người chơi đang online đều được mời trả lời
@@ -154,7 +163,7 @@ class GameEngine {
     if (alive.length <= 1) {
       this.phase = 'finished';
       this.winnerTeamId = alive[0] ? alive[0].id : null;
-      return { ok: true, finished: true, winnerTeamId: this.winnerTeamId };
+      return { ok: true, finished: true, winnerTeamId: this.winnerTeamId, podium: this.podium(this.winnerTeamId) };
     }
 
     if (!this.questions.length) return { ok: false, error: 'Không có câu hỏi' };
@@ -238,7 +247,7 @@ class GameEngine {
         if (t && t.alive) {
           t.hp = Math.max(0, t.hp - 1);
           damaged.push(teamId);
-          if (t.hp === 0) t.alive = false;
+          if (t.hp === 0) { t.alive = false; this.eliminationOrder.push(teamId); }
         }
       }
     }
@@ -291,7 +300,7 @@ class GameEngine {
     if (targetTeamId === attackerTeamId) return { ok: false, error: 'Không thể tấn công chính mình' };
 
     target.hp = Math.max(0, target.hp - 1);
-    if (target.hp === 0) target.alive = false;
+    if (target.hp === 0) { target.alive = false; this.eliminationOrder.push(targetTeamId); }
 
     // cập nhật lịch sử vòng cuối
     if (this.history.length) this.history[this.history.length - 1].attackedTeamId = targetTeamId;

@@ -95,7 +95,7 @@ function registerSockets(io, engine) {
       clearTimer();
       clearNextRoundTimer();
       broadcastState();
-      io.emit('match-finished', { winnerTeamId: r.winnerTeamId });
+      io.emit('match-finished', { winnerTeamId: r.winnerTeamId, podium: r.podium });
     }
   }
 

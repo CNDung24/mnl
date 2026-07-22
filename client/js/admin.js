@@ -121,7 +121,7 @@ function renderHP() {
   const el = document.getElementById('hp-list');
   el.innerHTML = '';
   state.teams.forEach(t => {
-    const pct = (t.hp / 10) * 100;
+    const pct = (t.hp / 5) * 100;
     const d = document.createElement('div');
     d.className = 'team-card' + (t.alive ? '' : ' dead');
     d.innerHTML = `
@@ -131,7 +131,7 @@ function renderHP() {
       </div>
       <div class="hp-bar">
         <div class="hp-fill" style="width:${pct}%;background:${t.color}"></div>
-        <span class="hp-text">${t.hp}/10</span>
+        <span class="hp-text">${t.hp}/5</span>
       </div>`;
     el.appendChild(d);
   });

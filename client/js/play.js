@@ -97,7 +97,7 @@ function renderTeamHP() {
         <div class="center" style="color:${t.color};font-size:11px">${t.name}</div>
         <div class="hp-bar" style="margin-top:4px">
           <div class="hp-fill" style="width:100%;background:${t.color}"></div>
-          <span class="hp-text">10/10</span>
+          <span class="hp-text">5/5</span>
         </div>`;
       el.appendChild(d);
     });
@@ -106,11 +106,11 @@ function renderTeamHP() {
     const card = document.getElementById('lobby-team-card-' + t.id);
     if (!card) return;
     card.classList.toggle('dead', !t.alive);
-    const pct = (t.hp / 10) * 100;
+    const pct = (t.hp / 5) * 100;
     const fill = card.querySelector('.hp-fill');
     const txt = card.querySelector('.hp-text');
     if (fill) fill.style.width = pct + '%';
-    if (txt) txt.textContent = (t.alive ? t.hp : '💀') + '/10';
+    if (txt) txt.textContent = (t.alive ? t.hp : '💀') + '/5';
   });
 }
 
@@ -398,7 +398,8 @@ function showAttackBattle(attackerTeamId, targetTeamId, eliminated) {
     // fill-mode:forwards này sẽ đứng yên ở vị trí "lố" đó -> nhân vật mất hình.
     // Sửa lại đúng vị trí frame cuối ngay khi animation dừng.
     const spriteEl = attackerEl.querySelector('.attack-sprite');
-    const lastFramePos = -(attackerCh.attackFrames - 1) * (attackerCh.attackFw * 2);
+    const lastFrameIndex = (typeof attackerCh.attackLastFrame === 'number') ? attackerCh.attackLastFrame : attackerCh.attackFrames - 1;
+    const lastFramePos = -lastFrameIndex * (attackerCh.attackFw * 2);
     spriteEl.addEventListener('animationend', () => {
       spriteEl.style.animation = 'none';
       spriteEl.style.backgroundPosition = lastFramePos + 'px 0';
@@ -439,14 +440,61 @@ socket.on('match-finished', (data) => {
   document.getElementById('status-label').textContent =
     '🏆 KẾT THÚC! Vô địch: ' + (t ? t.name : '---');
   hideAll();
+  showChampionOverlay(data.podium && data.podium.length ? data.podium : [data.winnerTeamId]);
 });
 
+// ---------- Bục vinh danh + pháo hoa ----------
+let fireworksInterval = null;
+function showChampionOverlay(podium) {
+  const overlay = document.getElementById('champion-overlay');
+  const row = document.getElementById('podium-row');
+  row.innerHTML = '';
+  [1, 2, 3].forEach(rank => {
+    const teamId = podium[rank - 1];
+    if (!teamId) return;
+    const t = TEAMS.find(x => x.id === teamId);
+    if (!t) return;
+    const ch = charMap[t.characterId];
+    const slot = document.createElement('div');
+    slot.className = 'podium-slot rank-' + rank;
+    slot.innerHTML = `
+      <div class="podium-char">${idleCharHtml(ch, rank === 1 ? 2.2 : 1.6)}</div>
+      <div class="podium-name" style="color:${t.color}">${t.name}</div>
+      <div class="podium-step">${rank}</div>`;
+    row.appendChild(slot);
+  });
+  overlay.classList.remove('hidden');
+  const layer = document.getElementById('fireworks-layer');
+  clearInterval(fireworksInterval);
+  fireworksInterval = setInterval(() => spawnFirework(layer), 300);
+}
+
+const FIREWORK_COLORS = ['#f0d175', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#ff6b6b'];
+function spawnFirework(container) {
+  const el = document.createElement('div');
+  el.className = 'firework';
+  el.style.left = (10 + Math.random() * 80) + '%';
+  el.style.top = (15 + Math.random() * 45) + '%';
+  el.style.color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('burst'));
+  setTimeout(() => el.remove(), 1200);
+}
+
 // ---------- Phase UI ----------
+// Lưu ý: KHÔNG ẩn champion-overlay ở đây — hideAll() có thể được gọi nhiều lần
+// trong lúc phase vẫn là 'finished' (VD: có người vào/rời phòng), nếu ẩn ở đây
+// bục vinh danh sẽ bị tắt giữa chừng. Nó chỉ nên ẩn khi trận thực sự bắt đầu lại.
 function hideAll() {
   document.getElementById('question-box').classList.add('hidden');
   document.getElementById('spectate-box').classList.add('hidden');
   document.getElementById('winner-overlay').classList.add('hidden');
   clearTimeout(winnerOverlayTimeout);
+}
+
+function hideChampionOverlay() {
+  document.getElementById('champion-overlay').classList.add('hidden');
+  clearInterval(fireworksInterval);
 }
 
 function updatePhaseUI() {
@@ -459,6 +507,7 @@ function updatePhaseUI() {
   if (state.phase === 'lobby') {
     label.textContent = '🏛️ SẢNH CHỜ - chờ admin bắt đầu';
     hideAll();
+    hideChampionOverlay();
     if (banner) banner.classList.add('hidden');
     if (canvas) {
       canvas.classList.remove('hidden');

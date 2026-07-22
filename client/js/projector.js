@@ -76,19 +76,53 @@ socket.on('attacked', (data) => {
 });
 
 socket.on('match-finished', (data) => {
-  const t = TEAMS.find(x => x.id === data.winnerTeamId);
-  const ch = t ? charMap[t.characterId] : null;
-  const overlay = document.getElementById('winner-overlay');
-  document.getElementById('winner-card').style.setProperty('--wt-color', t ? t.color : 'var(--gold)');
-  document.getElementById('winner-badge').textContent = '🏆 VÔ ĐỊCH 🏆';
-  document.getElementById('winner-char').innerHTML = idleCharHtml(ch, 2);
-  document.getElementById('winner-team').textContent = t ? t.name : '---';
-  document.getElementById('winner-time').textContent = '';
-  document.getElementById('winner-battle').classList.add('hidden');
-  document.getElementById('winner-wait-msg').classList.add('hidden');
+  document.getElementById('winner-overlay').classList.add('hidden');
   clearTimeout(winnerOverlayTimeout);
-  overlay.classList.remove('hidden');
+  showChampionOverlay(data.podium && data.podium.length ? data.podium : [data.winnerTeamId]);
 });
+
+// ---------- Bục vinh danh + pháo hoa ----------
+let fireworksInterval = null;
+function showChampionOverlay(podium) {
+  const overlay = document.getElementById('champion-overlay');
+  const row = document.getElementById('podium-row');
+  row.innerHTML = '';
+  [1, 2, 3].forEach(rank => {
+    const teamId = podium[rank - 1];
+    if (!teamId) return;
+    const t = TEAMS.find(x => x.id === teamId);
+    if (!t) return;
+    const ch = charMap[t.characterId];
+    const slot = document.createElement('div');
+    slot.className = 'podium-slot rank-' + rank;
+    slot.innerHTML = `
+      <div class="podium-char">${idleCharHtml(ch, rank === 1 ? 2.2 : 1.6)}</div>
+      <div class="podium-name" style="color:${t.color}">${t.name}</div>
+      <div class="podium-step">${rank}</div>`;
+    row.appendChild(slot);
+  });
+  overlay.classList.remove('hidden');
+  const layer = document.getElementById('fireworks-layer');
+  clearInterval(fireworksInterval);
+  fireworksInterval = setInterval(() => spawnFirework(layer), 300);
+}
+
+function hideChampionOverlay() {
+  document.getElementById('champion-overlay').classList.add('hidden');
+  clearInterval(fireworksInterval);
+}
+
+const FIREWORK_COLORS = ['#f0d175', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#ff6b6b'];
+function spawnFirework(container) {
+  const el = document.createElement('div');
+  el.className = 'firework';
+  el.style.left = (10 + Math.random() * 80) + '%';
+  el.style.top = (15 + Math.random() * 45) + '%';
+  el.style.color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('burst'));
+  setTimeout(() => el.remove(), 1200);
+}
 
 // ---------- Overlay công bố đội thắng vòng + cảnh giao chiến ----------
 let winnerOverlayTimeout = null;
@@ -188,7 +222,8 @@ function showAttackBattle(attackerTeamId, targetTeamId, eliminated) {
     attackDurationMs = attackerCh.attackFrames * FRAME_MS;
     attackerEl.innerHTML = `<div class="attack-sprite" style="${facingStyle(attackerCh, 1)}background-image:url('${attackerCh.attackImage}');width:${attackerCh.attackFw * 2}px;height:${attackerCh.attackFh * 2}px;--frames:${attackerCh.attackFrames};--fw:${attackerCh.attackFw * 2}px;animation-duration:${attackDurationMs}ms"></div>`;
     const spriteEl = attackerEl.querySelector('.attack-sprite');
-    const lastFramePos = -(attackerCh.attackFrames - 1) * (attackerCh.attackFw * 2);
+    const lastFrameIndex = (typeof attackerCh.attackLastFrame === 'number') ? attackerCh.attackLastFrame : attackerCh.attackFrames - 1;
+    const lastFramePos = -lastFrameIndex * (attackerCh.attackFw * 2);
     spriteEl.addEventListener('animationend', () => {
       spriteEl.style.animation = 'none';
       spriteEl.style.backgroundPosition = lastFramePos + 'px 0';
@@ -224,13 +259,15 @@ function renderAll() {
   if (!state) return;
   renderTeams();
   renderQuestion();
+  // Trận đã reset về sảnh chờ -> tắt bục vinh danh của trận trước (nếu còn)
+  if (state.phase === 'lobby') hideChampionOverlay();
 }
 
 function renderTeams() {
   const el = document.getElementById('teams-row');
   el.innerHTML = '';
   state.teams.forEach(t => {
-    const pct = (t.hp / 10) * 100;
+    const pct = (t.hp / 5) * 100;
     const d = document.createElement('div');
     d.id = 'team-card-' + t.id;
     d.className = 'panel' + (t.alive ? '' : ' dead');
@@ -241,7 +278,7 @@ function renderTeams() {
       <div class="center" style="font-size:9px;margin:4px 0">${t.players} người ${t.alive ? '' : '💀'}</div>
       <div class="hp-bar">
         <div class="hp-fill" style="width:${pct}%;background:${t.color}"></div>
-        <span class="hp-text">${t.hp}/10</span>
+        <span class="hp-text">${t.hp}/5</span>
       </div>`;
     el.appendChild(d);
   });
