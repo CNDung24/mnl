@@ -270,6 +270,10 @@ class GameEngine {
     this.winnerTeamId = correctTeams.length ? correctTeams[0][0] : null;
     const winnerTimeMs = correctTeams.length ? correctTeams[0][1].timeMs : null;
     this.pendingAttackerTeam = this.winnerTeamId;
+    // Nếu các đội khác đã bị loại ngay trong bước trừ HP ở trên (VD: chỉ còn
+    // đúng đội thắng sống sót), không còn ai để tấn công -> bỏ qua pha attack
+    // (tránh đứng chờ hết ATTACK_TIME vô ích trước khi hiện màn vô địch).
+    const canAttack = this.winnerTeamId && this.attackableTeams().length > 0;
 
     // lưu lịch sử
     const record = {
@@ -286,7 +290,7 @@ class GameEngine {
     };
     this.history.push(record);
 
-    this.phase = this.winnerTeamId ? 'attack' : 'reveal';
+    this.phase = canAttack ? 'attack' : 'reveal';
 
     return { ok: true, results, damaged, winnerTeamId: this.winnerTeamId, winnerTimeMs, record };
   }
