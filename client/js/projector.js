@@ -74,6 +74,7 @@ socket.on('reveal', (data) => {
 function showResultsSummary(results, onDone) {
   const overlay = document.getElementById('winner-overlay');
   const card = document.getElementById('winner-card');
+  card.classList.add('results-mode');
   card.style.setProperty('--wt-color', 'var(--gold)');
 
   document.getElementById('winner-badge').textContent = '';
@@ -97,7 +98,7 @@ function showResultsSummary(results, onDone) {
     div.className = 'result-card';
     div.style.borderColor = t.color;
     div.innerHTML = `
-      <div class="result-char">${idleCharHtml(ch, 1)}</div>
+      <div class="result-char">${idleCharHtml(ch, 1.4)}</div>
       <div class="result-team" style="color:${t.color}">${t.name}</div>
       <div class="result-answer ${r.correct ? 'correct' : 'wrong'}">${answered ? latin[r.choice] : '—'}</div>
       <div class="result-time">${hasTime ? (r.timeMs / 1000).toFixed(2) + 's' : 'Không trả lời'}</div>`;
@@ -108,6 +109,7 @@ function showResultsSummary(results, onDone) {
   clearTimeout(winnerOverlayTimeout);
   overlay.classList.remove('hidden');
   winnerOverlayTimeout = setTimeout(() => {
+    card.classList.remove('results-mode');
     document.getElementById('results-summary').classList.add('hidden');
     onDone();
   }, RESULTS_SUMMARY_MS);
